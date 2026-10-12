@@ -140,7 +140,7 @@ export default function Home() {
       {/* Immediate Poster/Fallback Background Image */}
       <img
         src="/images/hero-bg.webp"
-        alt="Wish For Moment Hero Background"
+        alt="WishForMoment - Create Personalized Digital Wishes and Invitations"
         fetchPriority="high"
         className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none select-none"
       />
@@ -161,17 +161,28 @@ export default function Home() {
         Your browser does not support the video tag.
       </video>
 
+      {/* Semantic Accessible Content for Search Engine Crawlers */}
+      <header className="sr-only">
+        <p>WishForMoment — Personalized Digital Wishes, Greetings & Magical Moments</p>
+      </header>
+      <section className="sr-only" aria-label="About WishForMoment Platform">
+        <h2>WishForMoment VIP Early Access Launch</h2>
+        <p>
+          WishForMoment helps you create beautiful, personalized digital wishes, invitations, and greetings. Customize and share magical moments with the people you love. Reserve your VIP seat and spin the surprise wheel to claim exclusive launch rewards.
+        </p>
+      </section>
+
       {/* Hero Layout: Left Content & Middle Right Email Capture */}
-      <div className="relative z-10 w-full min-h-screen flex flex-col lg:flex-row justify-between items-start pl-8 sm:pl-14 md:pl-20 lg:pl-24 pr-5 sm:pr-8 md:pr-10 lg:pr-12 pt-20 sm:pt-28 md:pt-32 pb-16">
+      <div className="relative z-10 w-full min-h-screen flex flex-col lg:flex-row justify-between items-start pl-5 sm:pl-14 md:pl-20 lg:pl-24 pr-5 sm:pr-8 md:pr-10 lg:pr-12 pt-10 md:pt-20 lg:pt-32 pb-16">
 
         {/* Left-Pinned Hero Section */}
-        <div className="max-w-xl text-left space-y-4 select-none">
+        <div className="w-full md:w-automd:max-w-xl text-left space-y-4 select-none">
           {/* Typography */}
           <h1 className="font-[family-name:var(--font-poppins)] tracking-tight leading-[1.16]">
-            <span className="block text-2xl sm:text-3xl md:text-4xl lg:text-[2vw] font-medium text-[#1e1346] drop-shadow-[0_1px_4px_rgba(255,255,255,0.6)] animate-in fade-in slide-in-from-top-3 duration-700">
+            <span className="block text-2xl sm:text-3xl md:text-3xl lg:text-[2.3vw]/[1.3] font-medium text-[#1e1346] drop-shadow-[0_1px_4px_rgba(255,255,255,0.6)] animate-in fade-in slide-in-from-top-3 duration-700">
               Something magical is
             </span>
-            <span className="block text-3xl sm:text-4xl md:text-5xl lg:text-[2.5vw]/[1.3] font-bold bg-gradient-to-r from-[#2c1b69] via-[#7e22ce] via-[#db2777] to-[#9333ea] bg-clip-text text-transparent mt-1 drop-shadow-[0_1px_5px_rgba(255,255,255,0.4)] animate-gradient-x animate-text-glow">
+            <span className="block text-[28px] sm:text-4xl md:text-4xl/[1.3] lg:text-[2.5vw]/[1.3] font-semibold bg-gradient-to-r from-[#2c1b69] via-[#7e22ce] via-[#db2777] to-[#9333ea] bg-clip-text text-transparent mt-1 drop-shadow-[0_1px_5px_rgba(255,255,255,0.4)] animate-gradient-x animate-text-glow">
               waiting to be opened...
             </span>
           </h1>
@@ -213,7 +224,8 @@ export default function Home() {
                     {/* Digits with Smooth Transitions */}
                     <span
                       key={item.value}
-                      className="relative z-10 text-xl sm:text-2xl md:text-[26px] font-extrabold text-[#1f104d] tracking-tight leading-none drop-shadow-[0_1px_2px_rgba(255,255,255,0.85)] animate-in fade-in zoom-in-95 duration-200"
+                      suppressHydrationWarning
+                      className="relative z-10 text-xl sm:text-2xl md:text-[26px] font-semibold text-[#1f104d] tracking-tight leading-none drop-shadow-[0_1px_2px_rgba(255,255,255,0.85)] animate-in fade-in zoom-in-95 duration-200"
                     >
                       {item.value}
                     </span>
@@ -236,71 +248,7 @@ export default function Home() {
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Center: Gift click area + Creative Mouse Movement Indicator */}
-        <div className="my-8 lg:mb-0 lg:mt-6 lg:absolute lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 z-20 flex flex-col items-center self-center select-none">
-          <button
-            onClick={togglePlay}
-            aria-label={isPlaying ? "Pause background video" : "Play background video"}
-            className={`group relative md:w-[24vw] md:h-[24vw] md:rounded-[50%] select-none ${!isPlaying ? "cursor-pointer" : ""}`}>
-          </button>
-
-          {/* Creative Mouse Movement & Click Indicator (Matches screenshot exactly, hidden while playing) */}
-          <div
-            onClick={togglePlay}
-            className={`absolute -bottom-[105px] flex flex-col items-center gap-1.5 group transition-all duration-300 cursor-pointer ${
-              isPlaying
-                ? "opacity-0 pointer-events-none scale-90 translate-y-2 invisible"
-                : "opacity-100 scale-100 active:scale-95 animate-float-gentle"
-            }`}
-          >
-            {/* Exact Hand-Drawn Style Mouse Icon with Radiating Click Rays */}
-            <svg
-              className="w-12 h-12 sm:w-14 sm:h-14 text-[#24134e] drop-shadow-[0_1px_4px_rgba(255,255,255,0.9)] group-hover:scale-110 transition-transform duration-200"
-              viewBox="0 0 52 52"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              {/* Left Radiating Click Rays */}
-              <g className="animate-pulse">
-                <line x1="8" y1="17" x2="13" y2="20" strokeWidth="2.4" />
-                <line x1="6" y1="26" x2="12" y2="26" strokeWidth="2.4" />
-                <line x1="8" y1="35" x2="13" y2="32" strokeWidth="2.4" />
-              </g>
-
-              {/* Right Radiating Click Rays */}
-              <g className="animate-pulse">
-                <line x1="44" y1="17" x2="39" y2="20" strokeWidth="2.4" />
-                <line x1="46" y1="26" x2="40" y2="26" strokeWidth="2.4" />
-                <line x1="44" y1="35" x2="39" y2="32" strokeWidth="2.4" />
-              </g>
-
-              {/* Mouse Outer Body Capsule */}
-              <rect x="18" y="11" width="16" height="28" rx="8" strokeWidth="2.4" />
-
-              {/* Top Vertical Divider between buttons */}
-              <line x1="26" y1="11" x2="26" y2="22" strokeWidth="2.4" />
-
-              {/* Horizontal Divider Line */}
-              <line x1="18" y1="22" x2="34" y2="22" strokeWidth="2.4" />
-            </svg>
-
-            {/* Two-Line Prompt with subtle glow pulse */}
-            <p className="font-[family-name:var(--font-poppins)] text-sm sm:text-base font-semibold tracking-wide text-[#23134e] text-center leading-tight drop-shadow-[0_1px_4px_rgba(255,255,255,0.95)] animate-pulse">
-              Click the gift to <br />
-              open the magic
-            </p>
-          </div>
-        </div>
-
-
-
-        {/* Right-Side: Water-themed email pill with dynamic feedback toast */}
-        <div className="w-full lg:w-auto mt-8 lg:mt-0 flex flex-col items-center lg:items-end lg:self-center mb-12 sm:mb-16 lg:mb-28 xl:mb-32 lg:translate-x-3">
-          <div className="relative w-full max-w-[340px] sm:max-w-[370px] md:max-w-[400px]">
+          <div className="relative w-full max-w-[340px] sm:max-w-[370px] md:max-w-[400px] mt-10">
             <form
               onSubmit={handleSubscribe}
               className="relative w-full flex items-center bg-gradient-to-b from-white/90 via-purple-100/60 to-purple-200/65 backdrop-blur-xl rounded-full p-1 sm:p-1.5 pl-3 sm:pl-4 border border-white/90 shadow-[0_8px_24px_-4px_rgba(112,65,199,0.25),inset_0_2px_4px_rgba(255,255,255,0.95),inset_0_-2px_4px_rgba(147,51,234,0.15)] transition-all duration-300 focus-within:shadow-[0_10px_28px_-2px_rgba(124,58,237,0.35),inset_0_2px_4px_rgba(255,255,255,0.95)]"
@@ -328,7 +276,11 @@ export default function Home() {
 
               {/* Email Input */}
               <input
+                id="vip-email-subscribe-input"
+                name="email"
                 type="email"
+                autoComplete="email"
+                aria-label="Enter your email to save your seat for VIP early access"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email..."
@@ -339,6 +291,7 @@ export default function Home() {
               {/* Pill Submit Button (Glossy Liquid Finish) */}
               <button
                 type="submit"
+                aria-label="Save my seat for VIP early access"
                 disabled={submitState === "loading"}
                 className={`relative flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold text-[11px] sm:text-xs shadow-[0_3px_10px_rgba(109,40,217,0.35),inset_0_1px_1.5px_rgba(255,255,255,0.4)] transition-all duration-300 shrink-0 whitespace-nowrap cursor-pointer disabled:opacity-85 disabled:cursor-wait text-white ${submitState === "success"
                   ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 scale-[1.02]"
@@ -444,6 +397,62 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Center: Gift click area + Creative Mouse Movement Indicator */}
+        <div className="my-8 lg:mb-0 lg:mt-6 lg:absolute lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 z-20 flex flex-col items-center self-center select-none">
+          <button
+            onClick={togglePlay}
+            aria-label={isPlaying ? "Pause background video" : "Play background video"}
+            className={`group relative md:w-[24vw] md:h-[24vw] md:rounded-[50%] select-none ${!isPlaying ? "cursor-pointer" : ""}`}>
+          </button>
+
+          {/* Creative Mouse Movement & Click Indicator (Matches screenshot exactly, hidden while playing) */}
+          <div
+            onClick={togglePlay}
+            className={`absolute -bottom-[105px] flex flex-col items-center gap-1.5 group transition-all duration-300 cursor-pointer ${isPlaying
+              ? "opacity-0 pointer-events-none scale-90 translate-y-2 invisible"
+              : "opacity-100 scale-100 active:scale-95 animate-float-gentle"
+              }`}
+          >
+            {/* Exact Hand-Drawn Style Mouse Icon with Radiating Click Rays */}
+            <svg
+              className="w-12 h-12 sm:w-14 sm:h-14 text-[#24134e] drop-shadow-[0_1px_4px_rgba(255,255,255,0.9)] group-hover:scale-110 transition-transform duration-200"
+              viewBox="0 0 52 52"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {/* Left Radiating Click Rays */}
+              <g className="animate-pulse">
+                <line x1="8" y1="17" x2="13" y2="20" strokeWidth="2.4" />
+                <line x1="6" y1="26" x2="12" y2="26" strokeWidth="2.4" />
+                <line x1="8" y1="35" x2="13" y2="32" strokeWidth="2.4" />
+              </g>
+
+              {/* Right Radiating Click Rays */}
+              <g className="animate-pulse">
+                <line x1="44" y1="17" x2="39" y2="20" strokeWidth="2.4" />
+                <line x1="46" y1="26" x2="40" y2="26" strokeWidth="2.4" />
+                <line x1="44" y1="35" x2="39" y2="32" strokeWidth="2.4" />
+              </g>
+
+              {/* Mouse Outer Body Capsule */}
+              <rect x="18" y="11" width="16" height="28" rx="8" strokeWidth="2.4" />
+
+              {/* Top Vertical Divider between buttons */}
+              <line x1="26" y1="11" x2="26" y2="22" strokeWidth="2.4" />
+
+              {/* Horizontal Divider Line */}
+              <line x1="18" y1="22" x2="34" y2="22" strokeWidth="2.4" />
+            </svg>
+
+            {/* Two-Line Prompt with subtle glow pulse */}
+            <p className="font-[family-name:var(--font-poppins)] text-sm sm:text-base font-semibold tracking-wide text-[#23134e] text-center leading-tight drop-shadow-[0_1px_4px_rgba(255,255,255,0.95)] animate-pulse">
+              Click the gift to <br />
+              open the magic
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Exclusive Launch Offer Wheel Spinner */}

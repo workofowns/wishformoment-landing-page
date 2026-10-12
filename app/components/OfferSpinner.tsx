@@ -1,9 +1,20 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useGoogleLogin } from "@react-oauth/google";
 
-// User's custom signup API endpoint - easily configurable
-export const SIGNUP_API_ENDPOINT = "/api/auth/signup";
+// Standard API endpoints
+export const OAUTH_GOOGLE_ENDPOINT = "/auth/oauth/google";
+
+// Helper to map spin wheel offer to standard backend reward code
+export function getRewardCodeFromOffer(offer: OfferItem): string {
+  if (offer.id === 0 || offer.label.includes("Premium")) return "FREE_PREMIUM_WISH";
+  if (offer.id === 1 || offer.label.includes("50%")) return "DISCOUNT_50";
+  if (offer.id === 2 || offer.label.includes("80%")) return "DISCOUNT_80";
+  if (offer.id === 3 || offer.label.includes("30%")) return "DISCOUNT_30";
+  if (offer.id === 4 || offer.label.includes("40%")) return "DISCOUNT_40";
+  return "DISCOUNT_50";
+}
 
 // Exact 5 offers requested by user
 export interface OfferItem {
@@ -51,6 +62,7 @@ interface ClaimedData {
   email?: string;
   claimed: boolean;
   date: string;
+  rewardCode?: string;
 }
 
 export interface OfferSpinnerProps {
@@ -71,17 +83,21 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
   const [isSubmittingApi, setIsSubmittingApi] = useState(false);
   const [apiSuccessMsg, setApiSuccessMsg] = useState<string | null>(null);
 
-  // Load saved assigned offer (strictly 1 offer assigned per user)
-  const [savedData, setSavedData] = useState<ClaimedData | null>(() => {
-    if (typeof window === "undefined") return null;
+  const [savedData, setSavedData] = useState<ClaimedData | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Load saved assigned offer strictly after client mount to prevent SSR hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
     try {
       const data = localStorage.getItem("wish_assigned_user_offer");
-      if (data) return JSON.parse(data);
+      if (data) {
+        setSavedData(JSON.parse(data));
+      }
     } catch {
       // Ignore
     }
-    return null;
-  });
+  }, []);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -258,52 +274,73 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
     }, totalDuration);
   };
 
-  // Google Signup API Call Integration
-  const handleSignupWithGoogle = async () => {
-    if (!savedData || isSubmittingApi) return;
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
-    setIsSubmittingApi(true);
-    setApiSuccessMsg(null);
+  // Google OAuth Login Integration with WishForMoment Backend API
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      if (!savedData || isSubmittingApi) return;
 
-    try {
-      // Calling user's signup API endpoint (replaceable by user)
-      const res = await fetch(SIGNUP_API_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          provider: "google",
-          offerId: savedData.offer.id,
-          offerLabel: savedData.offer.label,
-        }),
-      });
+      setIsSubmittingApi(true);
+      setGoogleError(null);
+      setApiSuccessMsg(null);
 
-      if (res.ok) {
-        const data = await res.json();
-        setApiSuccessMsg(data?.message || "Successfully linked to Google!");
-      }
-    } catch {
-      // In case backend endpoint is not yet mounted, gracefully save locally so UI flows smoothly
-      console.info("Signup API call initiated. Ready for custom endpoint.");
-    } finally {
-      // Mark as claimed for this user
-      const updated: ClaimedData = {
-        ...savedData,
-        email: "Google Account Connected",
-        claimed: true,
-      };
-      setSavedData(updated);
+      const rewardKey = getRewardCodeFromOffer(savedData.offer);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://stage.api.wishformoment.com";
+
       try {
-        localStorage.setItem("wish_assigned_user_offer", JSON.stringify(updated));
-      } catch {
-        // Ignore
+        const res = await fetch(`${apiBaseUrl}${OAUTH_GOOGLE_ENDPOINT}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            accessToken: tokenResponse.access_token,
+            reward: rewardKey,
+          }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => null);
+          const errorMsg =
+            errData?.error?.message ||
+            errData?.message ||
+            "Failed to claim reward with Google";
+          throw new Error(errorMsg);
+        }
+
+        const data = await res.json();
+        const userEmail = data?.user?.email || "Google Account Connected";
+
+        const updated: ClaimedData = {
+          ...savedData,
+          email: userEmail,
+          claimed: true,
+          rewardCode: rewardKey,
+        };
+        setSavedData(updated);
+        try {
+          localStorage.setItem("wish_assigned_user_offer", JSON.stringify(updated));
+        } catch {
+          // Ignore
+        }
+
+        setApiSuccessMsg(`Reward saved to ${userEmail}! ✨`);
+        triggerConfetti();
+        playWinSound();
+      } catch (err: unknown) {
+        console.error("Google OAuth error:", err);
+        const message = err instanceof Error ? err.message : "Authentication failed. Please try again.";
+        setGoogleError(message);
+      } finally {
+        setIsSubmittingApi(false);
       }
-      setIsSubmittingApi(false);
-      triggerConfetti();
-      playWinSound();
-    }
-  };
+    },
+    onError: (error) => {
+      console.error("Google sign in error:", error);
+      setGoogleError(error.error_description || "Google sign-in was cancelled or failed.");
+    },
+  });
 
   return (
     <>
@@ -313,12 +350,12 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
       {/* Floating Pill on Landing Page (Bottom Right) with Infinite Eye-Catching Animation */}
       <div className="absolute bottom-6 sm:bottom-8 right-5 sm:right-8 md:right-12 z-30 select-none animate-float-gentle">
         {/* Infinite Radar Glow Wave Ring */}
-        {!savedData && (
+        {(!isMounted || !savedData) && (
           <div className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-amber-400 via-fuchsia-500 to-purple-600 opacity-60 blur-md animate-radar-pulse pointer-events-none" />
         )}
 
         {/* Live Eye-Catching "FREE SPIN" Pulsing Badge */}
-        {!savedData && (
+        {(!isMounted || !savedData) && (
           <div className="absolute -top-3 right-6 z-40 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-pink-500 to-purple-600 text-[9px] font-black text-white uppercase tracking-wider shadow-[0_2px_12px_rgba(245,158,11,0.8)] border border-white/80 flex items-center gap-1.5 animate-pulse pointer-events-none">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-200 animate-ping shrink-0" />
             <span>FREE SPIN 🎁</span>
@@ -327,16 +364,17 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
 
         <button
           onClick={() => setModalOpen(true)}
+          suppressHydrationWarning
           className={`relative flex items-center gap-3 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full backdrop-blur-md border transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group overflow-hidden ${
-            savedData?.claimed
+            isMounted && savedData?.claimed
               ? "bg-[#183628]/90 border-emerald-400/40 shadow-[0_8px_25px_rgba(16,185,129,0.3)]"
-              : savedData
-              ? "bg-[#3f1655]/90 border-amber-400/50 animate-pulse shadow-[0_8px_28px_rgba(245,158,11,0.35)]"
-              : "bg-gradient-to-r from-[#2c1348]/95 via-[#3f195e]/95 to-[#240e3d]/95 hover:from-[#38185c]/95 hover:to-[#2e124f]/95 border-amber-300/60 animate-pulse-glow-spin"
-          }`}
+              : isMounted && savedData
+                ? "bg-[#3f1655]/90 border-amber-400/50 animate-pulse shadow-[0_8px_28px_rgba(245,158,11,0.35)]"
+                : "bg-gradient-to-r from-[#2c1348]/95 via-[#3f195e]/95 to-[#240e3d]/95 hover:from-[#38185c]/95 hover:to-[#2e124f]/95 border-amber-300/60 animate-pulse-glow-spin"
+            }`}
         >
           {/* Infinite Shimmer Sweep Reflection */}
-          {!savedData?.claimed && (
+          {(!isMounted || !savedData?.claimed) && (
             <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg] animate-shimmer-sweep" />
             </div>
@@ -391,20 +429,20 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
           </div>
 
           {/* Two-Line Prompt */}
-          <div className="flex flex-col text-left leading-tight">
-            <span className="font-[family-name:var(--font-poppins)] text-xs sm:text-[13px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-              {savedData?.claimed
+          <div suppressHydrationWarning className="flex flex-col text-left leading-tight">
+            <span suppressHydrationWarning className="font-[family-name:var(--font-poppins)] text-xs sm:text-[13px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+              {isMounted && savedData?.claimed
                 ? `Saved: ${savedData.offer.label}`
-                : savedData
-                ? `You Won: ${savedData.offer.label}!`
-                : "Spin & Win a Special Surprise!"}
+                : isMounted && savedData
+                  ? `You Won: ${savedData.offer.label}!`
+                  : "Spin & Win a Special Surprise!"}
             </span>
-            <span className="font-[family-name:var(--font-poppins)] text-[10px] sm:text-[11px] font-medium text-pink-200/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-              {savedData?.claimed
+            <span suppressHydrationWarning className="font-[family-name:var(--font-poppins)] text-[10px] sm:text-[11px] font-medium text-pink-200/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+              {isMounted && savedData?.claimed
                 ? "Saved to account • View details"
-                : savedData
-                ? "Click to Claim with Google ✨"
-                : "1 Free Premium Wish or up to 80% OFF"}
+                : isMounted && savedData
+                  ? "Click to Claim with Google ✨"
+                  : "1 Free Premium Wish or up to 80% OFF"}
             </span>
           </div>
         </button>
@@ -441,9 +479,8 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
             <div className="relative my-4 sm:my-5 flex items-center justify-center min-h-[280px] sm:min-h-[310px]">
               {/* Realistic Top Flapper / Needle */}
               <div
-                className={`absolute -top-3.5 z-20 w-0 h-0 border-l-[11px] border-l-transparent border-r-[11px] border-r-transparent border-t-[22px] border-t-amber-500 drop-shadow-[0_4px_6px_rgba(217,119,6,0.6)] transition-all duration-300 ${
-                  isFlapperWiggling ? "rotate-6 scale-110" : "rotate-0"
-                } ${savedData ? "opacity-30 blur-[1px]" : "opacity-100"}`}
+                className={`absolute -top-3.5 z-20 w-0 h-0 border-l-[11px] border-l-transparent border-r-[11px] border-r-transparent border-t-[22px] border-t-amber-500 drop-shadow-[0_4px_6px_rgba(217,119,6,0.6)] transition-all duration-300 ${isFlapperWiggling ? "rotate-6 scale-110" : "rotate-0"
+                  } ${savedData ? "opacity-30 blur-[1px]" : "opacity-100"}`}
               >
                 {/* Flapper Pivot Pin Dot */}
                 <div className="absolute -top-[23px] -left-[4px] w-2 h-2 rounded-full bg-white shadow-sm" />
@@ -455,13 +492,12 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
                 role={!savedData && !isSpinning ? "button" : undefined}
                 aria-label="Click to spin the wheel"
                 title={!savedData && !isSpinning ? "Click the wheel to spin!" : undefined}
-                className={`relative p-2.5 rounded-full bg-gradient-to-b from-[#fcd34d] via-[#f59e0b] to-[#b45309] shadow-[0_12px_35px_rgba(180,83,9,0.35),inset_0_2px_4px_rgba(255,255,255,0.8),inset_0_-3px_5px_rgba(120,53,15,0.4)] transition-all duration-700 ${
-                  savedData
+                className={`relative p-2.5 rounded-full bg-gradient-to-b from-[#fcd34d] via-[#f59e0b] to-[#b45309] shadow-[0_12px_35px_rgba(180,83,9,0.35),inset_0_2px_4px_rgba(255,255,255,0.8),inset_0_-3px_5px_rgba(120,53,15,0.4)] transition-all duration-700 ${savedData
                     ? "filter blur-[6px] sm:blur-[7px] opacity-65 scale-[0.97] pointer-events-none"
                     : isSpinning
-                    ? "opacity-100 scale-100 cursor-default"
-                    : "opacity-100 scale-100 cursor-pointer hover:scale-[1.03] active:scale-95 group"
-                }`}
+                      ? "opacity-100 scale-100 cursor-default"
+                      : "opacity-100 scale-100 cursor-pointer hover:scale-[1.03] active:scale-95 group"
+                  }`}
               >
                 {/* Rotating 3D Wheel Container */}
                 <div
@@ -566,16 +602,19 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
 
                     {/* Google Signup API Claim Flow */}
                     {savedData.claimed ? (
-                      <div className="rounded-2xl bg-emerald-50/90 border border-emerald-300 p-3 text-left flex items-center gap-2.5 shadow-xs">
-                        <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm shrink-0">
+                      <div className="rounded-2xl bg-emerald-50/90 border border-emerald-300 p-3.5 text-left flex items-center gap-3 shadow-xs">
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm shrink-0">
                           ✓
                         </div>
                         <div>
                           <div className="text-xs font-bold text-emerald-900 leading-tight">
-                            Claimed & Saved!
+                            Claimed & Saved to Account!
                           </div>
-                          <div className="text-[10px] text-emerald-700 mt-0.5 leading-snug">
-                            Linked to your account. Will apply automatically upon launch!
+                          <div className="text-[11px] font-medium text-emerald-700 mt-0.5 leading-snug">
+                            {savedData.email ? `Linked to ${savedData.email}` : "Google Account Connected"}
+                          </div>
+                          <div className="text-[10px] text-emerald-600/90 mt-1">
+                            Your reward will apply automatically on WishForMoment at launch! ✨
                           </div>
                         </div>
                       </div>
@@ -585,7 +624,7 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
                           Sign in with Google to save this prize to your account for launch day:
                         </p>
                         <button
-                          onClick={handleSignupWithGoogle}
+                          onClick={() => loginWithGoogle()}
                           disabled={isSubmittingApi}
                           className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-full bg-white hover:bg-neutral-50 text-neutral-800 font-bold text-xs border border-neutral-300 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-95 cursor-pointer disabled:opacity-60"
                         >
@@ -599,8 +638,24 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
                               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                             </svg>
                           )}
-                          <span>{isSubmittingApi ? "Connecting to Signup API..." : "Claim & Save with Google"}</span>
+                          <span>{isSubmittingApi ? "Connecting to Google..." : "Claim & Save with Google"}</span>
                         </button>
+                        {googleError && (
+                          <div className="rounded-xl bg-rose-50/95 border border-rose-300/80 p-2.5 text-left flex items-start gap-2 shadow-xs animate-in fade-in duration-200">
+                            <span className="text-sm shrink-0">⚠️</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-bold text-rose-900 leading-tight">
+                                Cannot Claim Reward
+                              </p>
+                              <p className="text-[10px] text-rose-700 mt-0.5 leading-snug">
+                                {googleError}
+                              </p>
+                              <p className="text-[9px] text-rose-600/90 mt-1 font-medium">
+                                💡 Please use a new Google account that has not claimed a reward before.
+                              </p>
+                            </div>
+                          </div>
+                        )}
                         {apiSuccessMsg && (
                           <p className="text-[10px] text-emerald-600 font-semibold">{apiSuccessMsg}</p>
                         )}
