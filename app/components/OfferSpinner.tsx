@@ -310,22 +310,42 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
       {/* Celebration Canvas */}
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-50 w-full h-full" />
 
-      {/* Floating Pill on Landing Page (Bottom Right) */}
-      <div className="absolute bottom-6 sm:bottom-8 right-5 sm:right-8 md:right-12 z-30 select-none">
+      {/* Floating Pill on Landing Page (Bottom Right) with Infinite Eye-Catching Animation */}
+      <div className="absolute bottom-6 sm:bottom-8 right-5 sm:right-8 md:right-12 z-30 select-none animate-float-gentle">
+        {/* Infinite Radar Glow Wave Ring */}
+        {!savedData && (
+          <div className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-amber-400 via-fuchsia-500 to-purple-600 opacity-60 blur-md animate-radar-pulse pointer-events-none" />
+        )}
+
+        {/* Live Eye-Catching "FREE SPIN" Pulsing Badge */}
+        {!savedData && (
+          <div className="absolute -top-3 right-6 z-40 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-pink-500 to-purple-600 text-[9px] font-black text-white uppercase tracking-wider shadow-[0_2px_12px_rgba(245,158,11,0.8)] border border-white/80 flex items-center gap-1.5 animate-pulse pointer-events-none">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-200 animate-ping shrink-0" />
+            <span>FREE SPIN 🎁</span>
+          </div>
+        )}
+
         <button
           onClick={() => setModalOpen(true)}
-          className={`flex items-center gap-3 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full backdrop-blur-md border shadow-[0_8px_28px_rgba(0,0,0,0.4)] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group ${
+          className={`relative flex items-center gap-3 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full backdrop-blur-md border transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group overflow-hidden ${
             savedData?.claimed
               ? "bg-[#183628]/90 border-emerald-400/40 shadow-[0_8px_25px_rgba(16,185,129,0.3)]"
               : savedData
               ? "bg-[#3f1655]/90 border-amber-400/50 animate-pulse shadow-[0_8px_28px_rgba(245,158,11,0.35)]"
-              : "bg-[#271441]/85 hover:bg-[#271441]/95 border-white/20"
+              : "bg-gradient-to-r from-[#2c1348]/95 via-[#3f195e]/95 to-[#240e3d]/95 hover:from-[#38185c]/95 hover:to-[#2e124f]/95 border-amber-300/60 animate-pulse-glow-spin"
           }`}
         >
-          {/* 3D Spin Wheel Icon */}
-          <div className="relative w-6 h-6 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center">
+          {/* Infinite Shimmer Sweep Reflection */}
+          {!savedData?.claimed && (
+            <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+              <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg] animate-shimmer-sweep" />
+            </div>
+          )}
+
+          {/* 3D Spin Wheel Icon with Continuous Infinite Rotation */}
+          <div className="relative w-7 h-7 sm:w-8 sm:h-8 shrink-0 flex items-center justify-center">
             <svg
-              className="w-full h-full drop-shadow-[0_2px_10px_rgba(245,158,11,0.7)] group-hover:rotate-180 transition-transform duration-700 ease-out"
+              className="w-full h-full drop-shadow-[0_2px_12px_rgba(245,158,11,0.85)] animate-slow-spin group-hover:[animation-duration:3s] transition-transform duration-700 ease-out"
               viewBox="0 0 32 32"
               fill="none"
             >

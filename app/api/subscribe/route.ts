@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
+    const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL || "https://script.google.com/macros/s/AKfycby2_Wo0-L6uwM-d04UPYDzeySWN1VeMzzjl3vZ5JZZSHnGtDOxfWf9DoL30vuo8gpsnmw/exec";
 
     // If Google Sheet Webhook URL is configured in environment variables
     if (webhookUrl && webhookUrl.trim() !== "") {
