@@ -5,6 +5,7 @@ import Image from "next/image";
 import OfferSpinner from "./components/OfferSpinner";
 import CountdownTimer from "./components/CountdownTimer";
 import StardustParticles from "./components/StardustParticles";
+import { trackEvent } from "@/lib/gtag";
 
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -67,6 +68,7 @@ export default function Home() {
       if (data.status === "already_exists") {
         setSubmitState("already_exists");
         setFeedbackMessage("You are already on the VIP list! ✨");
+        trackEvent({ action: "vip_seat_already_reserved", category: "conversion" });
         setTimeout(() => {
           setSubmitState("idle");
           setFeedbackMessage(null);
@@ -74,6 +76,7 @@ export default function Home() {
       } else if (data.status === "success") {
         setSubmitState("success");
         setFeedbackMessage("Seat saved! See you at launch ✨");
+        trackEvent({ action: "vip_seat_saved", category: "conversion" });
         setEmail("");
         setTimeout(() => {
           setSubmitState("idle");

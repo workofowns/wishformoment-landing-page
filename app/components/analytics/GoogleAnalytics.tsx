@@ -8,7 +8,7 @@ interface GoogleAnalyticsProps {
 }
 
 export function GoogleAnalytics({
-  gaId = siteConfig.gaId,
+  gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || siteConfig.gaId || "G-W889RRGH16",
 }: GoogleAnalyticsProps) {
   if (!gaId) return null;
 

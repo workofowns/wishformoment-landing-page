@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useSyncExternalStore } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
+import { trackEvent } from "@/lib/gtag";
 
 const emptySubscribe = () => () => {};
 
@@ -313,6 +314,11 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
       };
 
       setSavedData(newAssignment);
+      trackEvent({
+        action: "spin_wheel_win",
+        category: "engagement",
+        label: targetOffer.label,
+      });
       try {
         localStorage.setItem("wish_assigned_user_offer", JSON.stringify(newAssignment));
       } catch {
@@ -363,6 +369,11 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
             // Ignore
           }
           setApiSuccessMsg("Reward successfully applied to your account! ✨");
+          trackEvent({
+            action: "reward_claimed_google",
+            category: "conversion",
+            label: savedData.offer.label,
+          });
         } else {
           setGoogleError(data?.message || "Failed to link reward with your account.");
         }
