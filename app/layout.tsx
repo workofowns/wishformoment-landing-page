@@ -1,35 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Playfair_Display, Plus_Jakarta_Sans, Poppins } from "next/font/google";
+import { Poppins } from "next/font/google";
 import { AuthGoogleOAuthProvider } from "./components/AuthGoogleOAuthProvider";
 import { siteConfig } from "@/config/siteConfig";
 import { WebsiteJsonLd, OrganizationJsonLd, WebApplicationJsonLd } from "./components/seo";
 import { GoogleAnalytics } from "./components/analytics";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
-  subsets: ["latin"],
-});
-
 const poppins = Poppins({
   variable: "--font-poppins",
   weight: ["300", "400", "500", "600", "700", "800"],
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -120,7 +101,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${plusJakarta.variable} ${poppins.variable} font-poppins h-full antialiased`}
+      className={`${poppins.variable} font-poppins h-full antialiased`}
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         {/* Google Analytics */}

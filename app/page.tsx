@@ -1,23 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import Image from "next/image";
 import OfferSpinner from "./components/OfferSpinner";
+import CountdownTimer from "./components/CountdownTimer";
+import StardustParticles from "./components/StardustParticles";
 
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-
   const [isSpinnerOpen, setIsSpinnerOpen] = useState(false);
 
   const togglePlay = () => {
     if (videoRef.current) {
-      if (videoRef.current.paused) {
-        videoRef.current.play();
-        setIsPlaying(true);
-      } else {
-        // videoRef.current.pause();
-        // setIsPlaying(false);
+      if (videoRef.current.ended) {
+        videoRef.current.currentTime = 0;
       }
+      videoRef.current
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch(() => {
+          // In case of browser autoplay blocking
+        });
     }
   };
 
@@ -35,40 +41,6 @@ export default function Home() {
       setIsSpinnerOpen(true);
     }
   };
-
-  // Dynamic countdown timer
-  const [timeLeft, setTimeLeft] = useState({
-    days: "12",
-    hours: "08",
-    minutes: "24",
-    seconds: "36",
-  });
-
-  useEffect(() => {
-    // Set countdown target to 12 days, 8 hours, 24 minutes, 36 seconds from now
-    const targetDate = new Date(Date.now() + (12 * 86400 + 8 * 3600 + 24 * 60 + 36) * 1000);
-
-    const timer = setInterval(() => {
-      const now = new Date().getTime();
-      const diff = targetDate.getTime() - now;
-
-      if (diff > 0) {
-        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const s = Math.floor((diff % (1000 * 60)) / 1000);
-
-        setTimeLeft({
-          days: String(d).padStart(2, "0"),
-          hours: String(h).padStart(2, "0"),
-          minutes: String(m).padStart(2, "0"),
-          seconds: String(s).padStart(2, "0"),
-        });
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   const [email, setEmail] = useState("");
   const [submitState, setSubmitState] = useState<"idle" | "loading" | "success" | "already_exists" | "error">("idle");
@@ -125,27 +97,22 @@ export default function Home() {
     }
   };
 
-  const timerItems = [
-    { label: "DAYS", value: timeLeft.days },
-    { label: "HOURS", value: timeLeft.hours },
-    { label: "MINUTES", value: timeLeft.minutes },
-    { label: "SECONDS", value: timeLeft.seconds },
-  ];
-
   return (
     <main
-      className="relative min-h-screen w-full overflow-hidden bg-cover bg-center bg-no-repeat font-[family-name:var(--font-poppins)]"
+      className="relative h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] overflow-hidden select-none bg-cover bg-center bg-no-repeat font-[family-name:var(--font-poppins)]"
       style={{ backgroundImage: "url('/images/hero-bg.webp')" }}
     >
       {/* Immediate Poster/Fallback Background Image */}
-      <img
+      <Image
         src="/images/hero-bg.webp"
         alt="WishForMoment - Create Personalized Digital Wishes and Invitations"
-        fetchPriority="high"
-        className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none select-none"
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover z-0 pointer-events-none select-none"
       />
 
-      {/* Background Video (Crisp, unblurred, native quality) */}
+      {/* Background Video (Crisp, native quality) */}
       <video
         ref={videoRef}
         poster="/images/hero-bg.webp"
@@ -161,6 +128,9 @@ export default function Home() {
         Your browser does not support the video tag.
       </video>
 
+      {/* Ambient Stardust Floating Twinkling Particles Layer */}
+      <StardustParticles />
+
       {/* Semantic Accessible Content for Search Engine Crawlers */}
       <header className="sr-only">
         <p>WishForMoment — Personalized Digital Wishes, Greetings & Magical Moments</p>
@@ -172,88 +142,51 @@ export default function Home() {
         </p>
       </section>
 
-      {/* Hero Layout: Left Content & Middle Right Email Capture */}
-      <div className="relative z-10 w-full min-h-screen flex flex-col lg:flex-row justify-between items-start pl-5 sm:pl-14 md:pl-20 lg:pl-24 pr-5 sm:pr-8 md:pr-10 lg:pr-12 pt-10 md:pt-20 lg:pt-32 pb-16">
+      {/* Hero Single-Viewport Layout (DVH & DVW fit, zero scroll) */}
+      <div className="relative z-10 w-full h-[100dvh] max-h-[100dvh] flex flex-col justify-between items-start pl-4 sm:pl-8 md:pl-16 lg:pl-24 pr-4 sm:pr-8 md:pr-10 lg:pr-12 pt-3 sm:pt-6 md:pt-10 lg:pt-14 pb-3 sm:pb-6 overflow-hidden pointer-events-none">
 
-        {/* Left-Pinned Hero Section */}
-        <div className="w-full md:w-automd:max-w-xl text-left space-y-4 select-none">
+        {/* Left Hero Content */}
+        <div className="w-full max-w-sm sm:max-w-md md:max-w-xl text-left space-y-1.5 sm:space-y-2.5 md:space-y-4 select-none pointer-events-auto mt-3 md:mt-0">
           {/* Typography */}
-          <h1 className="font-[family-name:var(--font-poppins)] tracking-tight leading-[1.16]">
-            <span className="block text-2xl sm:text-3xl md:text-3xl lg:text-[2.3vw]/[1.3] font-medium text-[#1e1346] drop-shadow-[0_1px_4px_rgba(255,255,255,0.6)] animate-in fade-in slide-in-from-top-3 duration-700">
+          <h1 className="font-[family-name:var(--font-poppins)] tracking-tight leading-[1.12]">
+            <span
+              className="block text-xl sm:text-2xl md:text-3xl lg:text-[2.2vw]/[1.25] font-medium text-[#1e1346] drop-shadow-[0_1px_4px_rgba(255,255,255,0.6)] animate-reveal-down"
+              style={{ animationDelay: "200ms" }}
+            >
               Something magical is
             </span>
-            <span className="block text-[28px] sm:text-4xl md:text-4xl/[1.3] lg:text-[2.5vw]/[1.3] font-semibold bg-gradient-to-r from-[#2c1b69] via-[#7e22ce] via-[#db2777] to-[#9333ea] bg-clip-text text-transparent mt-1 drop-shadow-[0_1px_5px_rgba(255,255,255,0.4)] animate-gradient-x animate-text-glow">
-              waiting to be opened...
+            <span
+              className="block text-2xl sm:text-3xl md:text-4xl lg:text-[2.5vw]/[1.25] font-semibold bg-gradient-to-r from-[#2c1b69] via-[#7e22ce] via-[#db2777] to-[#9333ea] bg-clip-text text-transparent mt-0.5 sm:mt-1 drop-shadow-[0_1px_5px_rgba(255,255,255,0.4)] animate-reveal-scale"
+              style={{ animationDelay: "450ms" }}
+            >
+              <span className="animate-gradient-x animate-text-glow inline-block">
+                waiting to be opened...
+              </span>
             </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="font-[family-name:var(--font-poppins)] text-[#4a3b72] text-sm sm:text-base md:text-lg font-normal leading-relaxed max-w-md drop-shadow-[0_1px_3px_rgba(255,255,255,0.5)] pt-1 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-200">
+          <p
+            className="font-[family-name:var(--font-poppins)] text-[#4a3b72] text-xs sm:text-sm md:text-base font-normal leading-relaxed max-w-xs sm:max-w-md drop-shadow-[0_1px_3px_rgba(255,255,255,0.5)] animate-reveal-up"
+            style={{ animationDelay: "700ms" }}
+          >
             Every beautiful moment deserves <br className="hidden sm:inline" />
             something unforgettable.
           </p>
 
-          {/* Water-Type Liquid Glassmorphic Countdown Timer with Staggered Infinite Float & Shimmer */}
-          <div className="pt-3 sm:pt-4">
-            <div className="inline-flex items-center gap-[6px]">
-              {timerItems.map((item, index) => (
-                <div
-                  key={item.label}
-                  className="flex items-center gap-[6px] animate-float-timer"
-                  style={{ animationDelay: `${index * 0.28}s` }}
-                >
-                  {/* Liquid Water Jelly Card */}
-                  <div className="relative group w-[54px] h-[58px] sm:w-[62px] sm:h-[66px] md:w-[68px] md:h-[72px] rounded-[18px] sm:rounded-[22px] flex flex-col items-center justify-center bg-gradient-to-b from-white/90 via-purple-100/60 to-purple-200/65 backdrop-blur-xl border border-white/90 shadow-[0_6px_18px_-2px_rgba(112,65,199,0.22),inset_0_2px_4px_rgba(255,255,255,0.95),inset_0_-2px_4px_rgba(147,51,234,0.15)] hover:scale-105 transition-all duration-300 cursor-default select-none overflow-hidden">
-                    {/* Top Curved Specular Glaze (Liquid Droplet Lens) */}
-                    <div className="absolute top-1 inset-x-1.5 h-3 sm:h-3.5 bg-gradient-to-b from-white/95 via-white/50 to-transparent rounded-t-[14px] sm:rounded-t-[18px] pointer-events-none" />
+          {/* Water-Type Liquid Glassmorphic Countdown Timer (Targets Locked Future Launch Date) */}
+          <CountdownTimer />
 
-                    {/* Corner Specular Droplet Spot */}
-                    <div className="absolute top-1.5 left-2 w-1.5 h-1.5 rounded-full bg-white blur-[0.2px] pointer-events-none" />
-
-                    {/* Bottom Soft Reflection */}
-                    <div className="absolute bottom-1 inset-x-2.5 h-1.5 bg-white/40 rounded-full blur-[1.5px] pointer-events-none" />
-
-                    {/* Shimmer Light Reflection Sweep Across Glass */}
-                    <div className="absolute inset-0 rounded-[18px] sm:rounded-[22px] overflow-hidden pointer-events-none">
-                      <div
-                        className="w-1/2 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg] animate-shimmer-sweep"
-                        style={{ animationDelay: `${index * 0.75}s` }}
-                      />
-                    </div>
-
-                    {/* Digits with Smooth Transitions */}
-                    <span
-                      key={item.value}
-                      suppressHydrationWarning
-                      className="relative z-10 text-xl sm:text-2xl md:text-[26px] font-semibold text-[#1f104d] tracking-tight leading-none drop-shadow-[0_1px_2px_rgba(255,255,255,0.85)] animate-in fade-in zoom-in-95 duration-200"
-                    >
-                      {item.value}
-                    </span>
-
-                    {/* Label */}
-                    <span className="relative z-10 text-[7.5px] sm:text-[8.5px] md:text-[9.5px] font-bold text-[#554585] tracking-wider uppercase mt-1 drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)]">
-                      {item.label}
-                    </span>
-                  </div>
-
-                  {/* Sparkling Diamond Separator between cards */}
-                  {index < timerItems.length - 1 && (
-                    <div className="flex items-center justify-center">
-                      <span className="text-amber-300 text-[11px] sm:text-xs drop-shadow-[0_0_8px_rgba(251,191,36,0.95)] animate-pulse select-none">
-                        ✦
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="relative w-full max-w-[340px] sm:max-w-[370px] md:max-w-[400px] mt-10">
+          {/* VIP Early Access Email Capture Form */}
+          <div
+            className="relative w-full max-w-[300px] sm:max-w-[360px] md:max-w-[400px] mt-2 sm:mt-3 md:mt-5 animate-reveal-up"
+            style={{ animationDelay: "1450ms" }}
+          >
             <form
               onSubmit={handleSubscribe}
               className="relative w-full flex items-center bg-gradient-to-b from-white/90 via-purple-100/60 to-purple-200/65 backdrop-blur-xl rounded-full p-1 sm:p-1.5 pl-3 sm:pl-4 border border-white/90 shadow-[0_8px_24px_-4px_rgba(112,65,199,0.25),inset_0_2px_4px_rgba(255,255,255,0.95),inset_0_-2px_4px_rgba(147,51,234,0.15)] transition-all duration-300 focus-within:shadow-[0_10px_28px_-2px_rgba(124,58,237,0.35),inset_0_2px_4px_rgba(255,255,255,0.95)]"
             >
-              {/* Top Curved Specular Glaze (Liquid Droplet Lens) */}
+              {/* Top Curved Specular Glaze */}
               <div className="absolute top-0.5 inset-x-3 h-2 sm:h-2.5 bg-gradient-to-b from-white/95 via-white/50 to-transparent rounded-t-full pointer-events-none" />
 
               {/* Corner Specular Droplet Spot */}
@@ -264,7 +197,7 @@ export default function Home() {
 
               {/* Mail Icon */}
               <div className="text-[#554585] shrink-0 mr-2 sm:mr-2.5 drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)]">
-                <svg className="w-4 h-4 sm:w-[18px] sm:h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -288,12 +221,12 @@ export default function Home() {
                 className="w-full bg-transparent text-[#1f104d] placeholder-[#6b5996] text-xs sm:text-[13px] font-medium outline-none pr-2 drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)]"
               />
 
-              {/* Pill Submit Button (Glossy Liquid Finish) */}
+              {/* Pill Submit Button */}
               <button
                 type="submit"
                 aria-label="Save my seat for VIP early access"
                 disabled={submitState === "loading"}
-                className={`relative flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold text-[11px] sm:text-xs shadow-[0_3px_10px_rgba(109,40,217,0.35),inset_0_1px_1.5px_rgba(255,255,255,0.4)] transition-all duration-300 shrink-0 whitespace-nowrap cursor-pointer disabled:opacity-85 disabled:cursor-wait text-white ${submitState === "success"
+                className={`relative flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold text-[11px] sm:text-xs shadow-[0_3px_10px_rgba(109,40,217,0.35),inset_0_1px_1.5px_rgba(255,255,255,0.4)] transition-all duration-300 shrink-0 whitespace-nowrap cursor-pointer disabled:opacity-85 disabled:cursor-wait text-white ${submitState === "success"
                   ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 scale-[1.02]"
                   : submitState === "already_exists"
                     ? "bg-gradient-to-r from-[#6b28d9] via-[#7c3aed] to-[#9333ea] scale-[1.02]"
@@ -327,49 +260,35 @@ export default function Home() {
               </button>
             </form>
 
-            {/* Dynamic Feedback Floating Pill (Liquid Jelly Specular Style) */}
+            {/* Dynamic Feedback Floating Pill */}
             <div
-              className={`absolute top-[calc(100%+10px)] inset-x-0 sm:left-auto sm:right-0 flex justify-center sm:justify-end transition-all duration-300 ease-out pointer-events-none z-20 ${feedbackMessage
-                ? "opacity-100 translate-y-0 scale-100"
-                : "opacity-0 -translate-y-2 scale-95"
+              className={`absolute top-[calc(100%+6px)] sm:top-[calc(100%+10px)] inset-x-0 sm:left-auto sm:right-0 flex justify-center sm:justify-end transition-all duration-300 ease-out pointer-events-none z-20 ${feedbackMessage ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-95"
                 }`}
             >
               {feedbackMessage && (
                 <div
-                  className={`relative flex items-center gap-2.5 px-4 py-2 rounded-2xl sm:rounded-full backdrop-blur-2xl border shadow-lg transition-all select-none ${submitState === "already_exists"
+                  className={`relative flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl sm:rounded-full backdrop-blur-2xl border shadow-lg transition-all select-none ${submitState === "already_exists"
                     ? "bg-gradient-to-b from-white/95 via-purple-50/90 to-purple-100/85 border-white/95 text-[#24134e] shadow-[0_8px_25px_-3px_rgba(112,65,199,0.25),inset_0_1.5px_2.5px_rgba(255,255,255,0.95)]"
                     : submitState === "success"
                       ? "bg-gradient-to-b from-white/95 via-emerald-50/90 to-teal-100/85 border-white/95 text-[#064e3b] shadow-[0_8px_25px_-3px_rgba(16,185,129,0.25),inset_0_1.5px_2.5px_rgba(255,255,255,0.95)]"
                       : "bg-gradient-to-b from-white/95 via-rose-50/90 to-pink-100/85 border-white/95 text-[#881337] shadow-[0_8px_25px_-3px_rgba(225,29,72,0.25),inset_0_1.5px_2.5px_rgba(255,255,255,0.95)]"
                     }`}
                 >
-                  {/* Top Curved Specular Glaze */}
-                  <div className="absolute top-0.5 inset-x-3 h-2 bg-gradient-to-b from-white/95 via-white/50 to-transparent rounded-t-full pointer-events-none" />
-
-                  {/* Corner Specular Droplet */}
-                  <div className="absolute top-1 left-2.5 w-1.5 h-1.5 rounded-full bg-white blur-[0.2px] pointer-events-none" />
-
                   {/* Status Icon Badge */}
                   <div
-                    className={`flex items-center justify-center w-5 h-5 rounded-full shrink-0 text-[10px] font-bold shadow-xs ${submitState === "already_exists"
+                    className={`flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-full shrink-0 text-[9px] sm:text-[10px] font-bold shadow-xs ${submitState === "already_exists"
                       ? "bg-gradient-to-br from-amber-400 to-amber-500 text-white"
                       : submitState === "success"
                         ? "bg-gradient-to-br from-emerald-400 to-teal-500 text-white"
                         : "bg-gradient-to-br from-rose-400 to-red-500 text-white"
                       }`}
                   >
-                    {submitState === "already_exists" ? (
-                      "✦"
-                    ) : submitState === "success" ? (
-                      "✓"
-                    ) : (
-                      "!"
-                    )}
+                    {submitState === "already_exists" ? "✦" : submitState === "success" ? "✓" : "!"}
                   </div>
 
                   {/* Two-Line Clean Feedback Text */}
                   <div className="flex flex-col text-left leading-tight pr-1">
-                    <span className="text-[12px] font-bold drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)]">
+                    <span className="text-[11px] sm:text-[12px] font-bold drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)]">
                       {submitState === "already_exists"
                         ? "You are already on the VIP list!"
                         : submitState === "success"
@@ -377,7 +296,7 @@ export default function Home() {
                           : feedbackMessage}
                     </span>
                     <span
-                      className={`text-[10px] font-medium ${submitState === "already_exists"
+                      className={`text-[9px] sm:text-[10px] font-medium ${submitState === "already_exists"
                         ? "text-[#6c5996]"
                         : submitState === "success"
                           ? "text-[#059669]"
@@ -398,24 +317,27 @@ export default function Home() {
         </div>
 
         {/* Center: Gift click area + Creative Mouse Movement Indicator */}
-        <div className="my-8 lg:mb-0 lg:mt-6 lg:absolute lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 z-20 flex flex-col items-center self-center select-none">
+        <div className="absolute top-[58%] sm:top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center select-none pointer-events-none">
+          {/* Main Gift Box Tap Target: completely invisible, covers gift on mobile and desktop */}
           <button
             onClick={togglePlay}
             aria-label={isPlaying ? "Pause background video" : "Play background video"}
-            className={`group relative md:w-[24vw] md:h-[24vw] md:rounded-[50%] select-none ${!isPlaying ? "cursor-pointer" : ""}`}>
-          </button>
+            className={`pointer-events-auto relative w-[62vw] h-[62vw] max-w-[240px] max-h-[240px] sm:w-[45vw] sm:h-[45vw] sm:max-w-[300px] sm:max-h-[300px] md:w-[24vw] md:h-[24vw] md:max-w-[340px] md:max-h-[340px] rounded-full select-none bg-transparent outline-none border-none focus:outline-none ${!isPlaying ? "cursor-pointer" : ""
+              }`}
+          />
 
-          {/* Creative Mouse Movement & Click Indicator (Matches screenshot exactly, hidden while playing) */}
+          {/* Creative Mouse Movement & Click Indicator */}
           <div
             onClick={togglePlay}
-            className={`absolute -bottom-[105px] flex flex-col items-center gap-1.5 group transition-all duration-300 cursor-pointer ${isPlaying
+            className={`pointer-events-auto absolute -bottom-14 sm:-bottom-16 md:-bottom-20 flex flex-col items-center gap-1 group transition-all duration-300 cursor-pointer animate-reveal-up ${isPlaying
               ? "opacity-0 pointer-events-none scale-90 translate-y-2 invisible"
               : "opacity-100 scale-100 active:scale-95 animate-float-gentle"
               }`}
+            style={{ animationDelay: "1700ms" }}
           >
             {/* Exact Hand-Drawn Style Mouse Icon with Radiating Click Rays */}
             <svg
-              className="w-12 h-12 sm:w-14 sm:h-14 text-[#24134e] drop-shadow-[0_1px_4px_rgba(255,255,255,0.9)] group-hover:scale-110 transition-transform duration-200"
+              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 text-[#24134e] drop-shadow-[0_1px_4px_rgba(255,255,255,0.9)] group-hover:scale-110 transition-transform duration-200"
               viewBox="0 0 52 52"
               fill="none"
               stroke="currentColor"
@@ -447,7 +369,7 @@ export default function Home() {
             </svg>
 
             {/* Two-Line Prompt with subtle glow pulse */}
-            <p className="font-[family-name:var(--font-poppins)] text-sm sm:text-base font-semibold tracking-wide text-[#23134e] text-center leading-tight drop-shadow-[0_1px_4px_rgba(255,255,255,0.95)] animate-pulse">
+            <p className="font-[family-name:var(--font-poppins)] text-xs sm:text-sm md:text-base font-semibold tracking-wide text-[#23134e] text-center leading-tight drop-shadow-[0_1px_4px_rgba(255,255,255,0.95)] animate-pulse">
               Click the gift to <br />
               open the magic
             </p>
@@ -455,13 +377,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Exclusive Launch Offer Wheel Spinner */}
+      {/* Exclusive Launch Offer Wheel Spinner Modal */}
       <OfferSpinner isOpen={isSpinnerOpen} onOpenChange={setIsSpinnerOpen} />
     </main>
   );
 }
-
-
-
-
-

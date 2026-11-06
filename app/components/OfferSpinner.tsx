@@ -1,14 +1,37 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useSyncExternalStore } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
+
+const emptySubscribe = () => () => {};
+
+let cachedRaw: string | null = null;
+let cachedParsed: ClaimedData | null = null;
+
+const getStoredOfferSnapshot = (): ClaimedData | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("wish_assigned_user_offer");
+    if (raw === cachedRaw) return cachedParsed;
+    cachedRaw = raw;
+    cachedParsed = raw ? (JSON.parse(raw) as ClaimedData) : null;
+    return cachedParsed;
+  } catch {
+    return null;
+  }
+};
+
+const subscribeToStorage = (callback: () => void) => {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+};
 
 // Standard API endpoints
 export const OAUTH_GOOGLE_ENDPOINT = "/auth/oauth/google";
 
 // Helper to map spin wheel offer to standard backend reward code
 export function getRewardCodeFromOffer(offer: OfferItem): string {
-  if (offer.id === 0 || offer.label.includes("Premium")) return "FREE_PREMIUM_WISH";
+  if (offer.id === 0 || offer.label.includes("Premium") || offer.label.includes("Free")) return "FREE_PREMIUM_WISH";
   if (offer.id === 1 || offer.label.includes("50%")) return "DISCOUNT_50";
   if (offer.id === 2 || offer.label.includes("80%")) return "DISCOUNT_80";
   if (offer.id === 3 || offer.label.includes("30%")) return "DISCOUNT_30";
@@ -16,44 +39,80 @@ export function getRewardCodeFromOffer(offer: OfferItem): string {
   return "DISCOUNT_50";
 }
 
-// Exact 5 offers requested by user
+// 5 Curated Magical Launch Offers
 export interface OfferItem {
   id: number;
   label: string;
   sublabel: string;
+  badge: string;
+  primaryValue: string;
+  secondaryValue: string;
+  icon: string;
   color: string;
+  gradientStart: string;
+  gradientEnd: string;
 }
 
 const OFFERS: OfferItem[] = [
   {
     id: 0,
-    label: "1 Premium Wish",
-    sublabel: "100% Free First Time",
-    color: "#e11d48", // Rose Red
+    label: "1 Free Premium Wish",
+    sublabel: "100% Free • Any Premium Wish Template On Us",
+    badge: "👑 VIP GRAND PRIZE",
+    primaryValue: "1 FREE",
+    secondaryValue: "PREMIUM WISH",
+    icon: "👑",
+    color: "#e11d48",
+    gradientStart: "#ff4d6d",
+    gradientEnd: "#be123c",
   },
   {
     id: 1,
     label: "50% Discount",
-    sublabel: "Half Off Any Wish",
-    color: "#7c3aed", // Royal Violet
+    sublabel: "Half-Off Celebration Pass",
+    badge: "50% OFF",
+    primaryValue: "50%",
+    secondaryValue: "OFF",
+    icon: "✨",
+    color: "#7c3aed",
+    gradientStart: "#a855f7",
+    gradientEnd: "#6b21a8",
   },
   {
     id: 2,
     label: "80% Discount",
-    sublabel: "Mega Launch Savings",
-    color: "#f59e0b", // Golden Amber
+    sublabel: "VIP Early Bird Pass",
+    badge: "80% OFF",
+    primaryValue: "80%",
+    secondaryValue: "OFF",
+    icon: "🌟",
+    color: "#f59e0b",
+    gradientStart: "#fbbf24",
+    gradientEnd: "#d97706",
   },
   {
     id: 3,
     label: "30% Discount",
-    sublabel: "Launch Celebration Pass",
-    color: "#0284c7", // Sky Blue
+    sublabel: "Launch Celebration Gift",
+    badge: "30% OFF",
+    primaryValue: "30%",
+    secondaryValue: "OFF",
+    icon: "🪄",
+    color: "#0284c7",
+    gradientStart: "#38bdf8",
+    gradientEnd: "#1d4ed8",
   },
   {
     id: 4,
     label: "40% Discount",
     sublabel: "Special Moment Offer",
-    color: "#c026d3", // Fuchsia
+    badge: "40% OFF",
+    primaryValue: "40%",
+    secondaryValue: "OFF",
+    icon: "💫",
+    color: "#c026d3",
+    gradientStart: "#f472b6",
+    gradientEnd: "#9d174d",
   },
 ];
 
@@ -83,21 +142,11 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
   const [isSubmittingApi, setIsSubmittingApi] = useState(false);
   const [apiSuccessMsg, setApiSuccessMsg] = useState<string | null>(null);
 
-  const [savedData, setSavedData] = useState<ClaimedData | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Load saved assigned offer strictly after client mount to prevent SSR hydration mismatch
-  useEffect(() => {
-    setIsMounted(true);
-    try {
-      const data = localStorage.getItem("wish_assigned_user_offer");
-      if (data) {
-        setSavedData(JSON.parse(data));
-      }
-    } catch {
-      // Ignore
-    }
-  }, []);
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const storedOffer = useSyncExternalStore(subscribeToStorage, getStoredOfferSnapshot, () => null);
+  const [localData, setLocalData] = useState<ClaimedData | null>(null);
+  const savedData = localData || storedOffer;
+  const setSavedData = setLocalData;
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -176,7 +225,7 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
     if (!ctx) return;
 
     const colors = ["#e11d48", "#f59e0b", "#7c3aed", "#0284c7", "#10b981", "#ec4899", "#ffd700"];
-    const particles = Array.from({ length: 85 }).map(() => ({
+    const particles = Array.from({ length: 90 }).map(() => ({
       x: canvas.width / 2,
       y: canvas.height / 2,
       vx: (Math.random() - 0.5) * 14,
@@ -238,12 +287,10 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
     const totalDuration = 4400; // 4.4 seconds
     const tickTimeouts: NodeJS.Timeout[] = [];
 
-    // Realistic physics: intervals start dense and expand as wheel slows down
     let currentT = 0;
     let interval = 55; // Initial fast ticking (ms)
     while (currentT < totalDuration - 200) {
       currentT += interval;
-      // Exponentially increase interval as wheel approaches destination
       interval = Math.min(600, interval * 1.07);
       const t = currentT;
       const timer = setTimeout(() => {
@@ -300,38 +347,28 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
           }),
         });
 
-        if (!res.ok) {
-          const errData = await res.json().catch(() => null);
-          const errorMsg =
-            errData?.error?.message ||
-            errData?.message ||
-            "Failed to claim reward with Google";
-          throw new Error(errorMsg);
-        }
-
         const data = await res.json();
-        const userEmail = data?.user?.email || "Google Account Connected";
 
-        const updated: ClaimedData = {
-          ...savedData,
-          email: userEmail,
-          claimed: true,
-          rewardCode: rewardKey,
-        };
-        setSavedData(updated);
-        try {
-          localStorage.setItem("wish_assigned_user_offer", JSON.stringify(updated));
-        } catch {
-          // Ignore
+        if (res.ok && data?.success) {
+          const updated: ClaimedData = {
+            ...savedData,
+            email: data?.data?.user?.email || "Google Account Connected",
+            claimed: true,
+            rewardCode: data?.data?.rewardCode || rewardKey,
+          };
+          setSavedData(updated);
+          try {
+            localStorage.setItem("wish_assigned_user_offer", JSON.stringify(updated));
+          } catch {
+            // Ignore
+          }
+          setApiSuccessMsg("Reward successfully applied to your account! ✨");
+        } else {
+          setGoogleError(data?.message || "Failed to link reward with your account.");
         }
-
-        setApiSuccessMsg(`Reward saved to ${userEmail}! ✨`);
-        triggerConfetti();
-        playWinSound();
-      } catch (err: unknown) {
-        console.error("Google OAuth error:", err);
-        const message = err instanceof Error ? err.message : "Authentication failed. Please try again.";
-        setGoogleError(message);
+      } catch (err) {
+        console.error("Failed to connect with WishForMoment backend:", err);
+        setGoogleError("Connection error with server. Please try again.");
       } finally {
         setIsSubmittingApi(false);
       }
@@ -347,16 +384,19 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
       {/* Celebration Canvas */}
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-50 w-full h-full" />
 
-      {/* Floating Pill on Landing Page (Bottom Right) with Infinite Eye-Catching Animation */}
-      <div className="absolute bottom-6 sm:bottom-8 right-5 sm:right-8 md:right-12 z-30 select-none animate-float-gentle">
+      {/* Floating Pill on Landing Page (Bottom Right) */}
+      <div
+        className="fixed bottom-3 sm:bottom-6 md:bottom-8 right-3 sm:right-6 md:right-10 z-30 select-none animate-cta-spring"
+        style={{ animationDelay: "1900ms" }}
+      >
         {/* Infinite Radar Glow Wave Ring */}
         {(!isMounted || !savedData) && (
-          <div className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-amber-400 via-fuchsia-500 to-purple-600 opacity-60 blur-md animate-radar-pulse pointer-events-none" />
+          <div className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-amber-300 via-pink-300 to-purple-400 opacity-50 blur-md animate-radar-pulse pointer-events-none" />
         )}
 
         {/* Live Eye-Catching "FREE SPIN" Pulsing Badge */}
         {(!isMounted || !savedData) && (
-          <div className="absolute -top-3 right-6 z-40 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-pink-500 to-purple-600 text-[9px] font-black text-white uppercase tracking-wider shadow-[0_2px_12px_rgba(245,158,11,0.8)] border border-white/80 flex items-center gap-1.5 animate-pulse pointer-events-none">
+          <div className="absolute -top-2.5 sm:-top-3 right-4 sm:right-6 z-40 px-2 sm:px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-pink-500 to-purple-600 text-[8px] sm:text-[9px] font-black text-white uppercase tracking-wider shadow-[0_2px_12px_rgba(245,158,11,0.8)] border border-white/80 flex items-center gap-1 sm:gap-1.5 animate-pulse pointer-events-none">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-200 animate-ping shrink-0" />
             <span>FREE SPIN 🎁</span>
           </div>
@@ -365,32 +405,29 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
         <button
           onClick={() => setModalOpen(true)}
           suppressHydrationWarning
-          className={`relative flex items-center gap-3 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full backdrop-blur-md border transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group overflow-hidden ${
+          className={`relative flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-5 py-1.5 sm:py-2.5 md:py-3 rounded-full backdrop-blur-xl border transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group overflow-hidden ${
             isMounted && savedData?.claimed
-              ? "bg-[#183628]/90 border-emerald-400/40 shadow-[0_8px_25px_rgba(16,185,129,0.3)]"
+              ? "bg-emerald-50/95 border-emerald-300/80 shadow-[0_8px_25px_rgba(16,185,129,0.2)]"
               : isMounted && savedData
-                ? "bg-[#3f1655]/90 border-amber-400/50 animate-pulse shadow-[0_8px_28px_rgba(245,158,11,0.35)]"
-                : "bg-gradient-to-r from-[#2c1348]/95 via-[#3f195e]/95 to-[#240e3d]/95 hover:from-[#38185c]/95 hover:to-[#2e124f]/95 border-amber-300/60 animate-pulse-glow-spin"
+                ? "bg-amber-50/95 border-amber-300/80 animate-pulse shadow-[0_8px_28px_rgba(245,158,11,0.25)]"
+                : "bg-white/95 hover:bg-white border-white/95 shadow-[0_8px_25px_-4px_rgba(112,65,199,0.22),inset_0_1.5px_2.5px_rgba(255,255,255,0.95)]"
             }`}
         >
           {/* Infinite Shimmer Sweep Reflection */}
           {(!isMounted || !savedData?.claimed) && (
             <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
-              <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg] animate-shimmer-sweep" />
+              <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[-20deg] animate-shimmer-sweep" />
             </div>
           )}
 
           {/* 3D Spin Wheel Icon with Continuous Infinite Rotation */}
-          <div className="relative w-7 h-7 sm:w-8 sm:h-8 shrink-0 flex items-center justify-center">
+          <div className="relative w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 shrink-0 flex items-center justify-center">
             <svg
               className="w-full h-full drop-shadow-[0_2px_12px_rgba(245,158,11,0.85)] animate-slow-spin group-hover:[animation-duration:3s] transition-transform duration-700 ease-out"
               viewBox="0 0 32 32"
               fill="none"
             >
-              {/* Outer Golden Rim */}
-              <circle cx="16" cy="16" r="14.5" stroke="url(#wheelRimGrad)" strokeWidth="2.5" />
-
-              {/* Colorful Slices */}
+              <circle cx="16" cy="16" r="14.5" stroke="url(#miniWheelRimGrad)" strokeWidth="2.5" />
               <path d="M16 16 L30 16 A14 14 0 0 1 23 28.12 Z" fill="#e11d48" />
               <path d="M16 16 L23 28.12 A14 14 0 0 1 9 28.12 Z" fill="#7c3aed" />
               <path d="M16 16 L9 28.12 A14 14 0 0 1 2 16 Z" fill="#f59e0b" />
@@ -398,28 +435,17 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
               <path d="M16 16 L9 3.88 A14 14 0 0 1 23 3.88 Z" fill="#10b981" />
               <path d="M16 16 L23 3.88 A14 14 0 0 1 30 16 Z" fill="#c026d3" />
 
-              {/* Slice Divider Spokes */}
-              <line x1="16" y1="16" x2="30" y2="16" stroke="white" strokeWidth="1" opacity="0.6" />
-              <line x1="16" y1="16" x2="23" y2="28.12" stroke="white" strokeWidth="1" opacity="0.6" />
-              <line x1="16" y1="16" x2="9" y2="28.12" stroke="white" strokeWidth="1" opacity="0.6" />
-              <line x1="16" y1="16" x2="2" y2="16" stroke="white" strokeWidth="1" opacity="0.6" />
-              <line x1="16" y1="16" x2="9" y2="3.88" stroke="white" strokeWidth="1" opacity="0.6" />
-              <line x1="16" y1="16" x2="23" y2="3.88" stroke="white" strokeWidth="1" opacity="0.6" />
-
-              {/* Center 3D Hub Cap */}
-              <circle cx="16" cy="16" r="4.5" fill="url(#hubPillGrad)" stroke="#ffffff" strokeWidth="1.2" />
+              <circle cx="16" cy="16" r="4.5" fill="url(#miniHubGrad)" stroke="#ffffff" strokeWidth="1.2" />
               <circle cx="16" cy="16" r="1.6" fill="#1e1044" />
-
-              {/* Top Mini Flapper Pointer */}
               <polygon points="16,0 18.5,4 13.5,4" fill="#fbbf24" stroke="#78350f" strokeWidth="0.5" />
 
               <defs>
-                <linearGradient id="wheelRimGrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <linearGradient id="miniWheelRimGrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
                   <stop stopColor="#fef08a" />
                   <stop offset="0.5" stopColor="#f59e0b" />
                   <stop offset="1" stopColor="#b45309" />
                 </linearGradient>
-                <linearGradient id="hubPillGrad" x1="13" y1="13" x2="19" y2="19" gradientUnits="userSpaceOnUse">
+                <linearGradient id="miniHubGrad" x1="13" y1="13" x2="19" y2="19" gradientUnits="userSpaceOnUse">
                   <stop stopColor="#ffffff" />
                   <stop offset="0.6" stopColor="#fcd34d" />
                   <stop offset="1" stopColor="#d97706" />
@@ -429,15 +455,15 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
           </div>
 
           {/* Two-Line Prompt */}
-          <div suppressHydrationWarning className="flex flex-col text-left leading-tight">
-            <span suppressHydrationWarning className="font-[family-name:var(--font-poppins)] text-xs sm:text-[13px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+          <div suppressHydrationWarning className="flex flex-col text-left leading-tight pr-1">
+            <span suppressHydrationWarning className="font-[family-name:var(--font-poppins)] text-[11px] sm:text-xs md:text-[13px] font-bold text-[#1f104d]">
               {isMounted && savedData?.claimed
                 ? `Saved: ${savedData.offer.label}`
                 : isMounted && savedData
                   ? `You Won: ${savedData.offer.label}!`
                   : "Spin & Win a Special Surprise!"}
             </span>
-            <span suppressHydrationWarning className="font-[family-name:var(--font-poppins)] text-[10px] sm:text-[11px] font-medium text-pink-200/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+            <span suppressHydrationWarning className="font-[family-name:var(--font-poppins)] text-[9px] sm:text-[10px] md:text-[11px] font-medium text-[#6b5996]">
               {isMounted && savedData?.claimed
                 ? "Saved to account • View details"
                 : isMounted && savedData
@@ -448,156 +474,248 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
         </button>
       </div>
 
-      {/* LIGHT THEME REALISTIC SPINNER MODAL */}
+      {/* REALISTIC MAGICAL FAIRY-TALE SPINNER MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-3xl bg-white/95 backdrop-blur-2xl border border-amber-200/70 p-6 sm:p-8 text-neutral-900 shadow-[0_25px_80px_rgba(30,10,60,0.25)] text-center font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#14082e]/65 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-[28px] sm:rounded-[32px] bg-gradient-to-b from-white/95 via-[#faf5ff]/95 to-[#fdf2f8]/95 backdrop-blur-2xl border border-white/95 p-4 sm:p-6 md:p-7 text-neutral-900 shadow-[0_25px_80px_rgba(112,65,199,0.35),inset_0_2px_4px_rgba(255,255,255,0.95)] text-center font-[family-name:var(--font-poppins)]">
+            {/* Ambient Star Sparkles */}
+            <span className="absolute top-4 left-5 text-amber-400 text-xs animate-twinkle select-none pointer-events-none">✦</span>
+            <span className="absolute top-12 right-6 text-purple-400 text-xs animate-twinkle select-none pointer-events-none">✦</span>
+            <span className="absolute bottom-6 left-6 text-pink-400 text-xs animate-twinkle select-none pointer-events-none">✦</span>
+
             {/* Close Button */}
             <button
               onClick={() => setModalOpen(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 hover:text-neutral-900 flex items-center justify-center transition-colors cursor-pointer"
+              aria-label="Close modal"
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/80 hover:bg-white text-[#554585] hover:text-[#1e1346] border border-purple-100 flex items-center justify-center transition-all shadow-xs cursor-pointer hover:scale-105 active:scale-95 z-40"
             >
               ✕
             </button>
 
             {/* Sparkle Badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-semibold tracking-wide uppercase mb-2">
-              <span>✨ Exclusive Launch Offer</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-100/90 via-purple-100/80 to-pink-100/90 border border-amber-200/80 text-amber-900 text-[10.5px] font-bold tracking-wider uppercase mb-2 shadow-xs">
+              <span className="text-amber-500 animate-twinkle">✦</span>
+              <span>Wheel of Magical Moments</span>
+              <span className="text-amber-500 animate-twinkle">✦</span>
             </div>
 
-            {/* Modal Title (Light Theme) */}
-            <h2 className="text-2xl sm:text-[26px] font-extrabold tracking-tight text-[#1f104d]">
-              {savedData ? "Your Assigned Launch Surprise" : "Spin & Win Your Special Surprise"}
+            {/* Modal Title */}
+            <h2 className="text-2xl sm:text-[25px] font-extrabold tracking-tight text-[#1f104d] leading-tight">
+              {savedData ? "Your Special Launch Gift" : "Spin & Reveal Your Magic Gift"}
             </h2>
-            <p className="text-xs text-neutral-600 mt-1 max-w-xs mx-auto">
+            <p className="text-xs sm:text-[12.5px] text-[#5c4b82] mt-1 max-w-xs mx-auto leading-relaxed">
               {savedData
-                ? "This exclusive gift is reserved for your account when our website launches!"
-                : "Spin once to unlock an exclusive offer: 1 Free Premium Wish or up to 80% discount!"}
+                ? "This exclusive reward is reserved for your account when WishForMoment launches!"
+                : "Every special moment deserves something unforgettable. Spin to unlock 1 Free Premium Wish or up to 80% discount!"}
             </p>
 
-            {/* REALISTIC 3D WHEEL STAGE WITH BLUR & FLOATING PRIZE OVERLAY */}
-            <div className="relative my-4 sm:my-5 flex items-center justify-center min-h-[280px] sm:min-h-[310px]">
-              {/* Realistic Top Flapper / Needle */}
+            {/* 3D MAGICAL WHEEL STAGE */}
+            <div className="relative my-4 sm:my-5 flex items-center justify-center min-h-[285px] sm:min-h-[310px]">
+              {/* Jeweled Golden Pointer / Flapper Needle */}
               <div
-                className={`absolute -top-3.5 z-20 w-0 h-0 border-l-[11px] border-l-transparent border-r-[11px] border-r-transparent border-t-[22px] border-t-amber-500 drop-shadow-[0_4px_6px_rgba(217,119,6,0.6)] transition-all duration-300 ${isFlapperWiggling ? "rotate-6 scale-110" : "rotate-0"
-                  } ${savedData ? "opacity-30 blur-[1px]" : "opacity-100"}`}
+                className={`absolute -top-3 z-30 flex flex-col items-center transition-all duration-300 drop-shadow-[0_4px_8px_rgba(180,83,9,0.55)] ${
+                  isFlapperWiggling ? "rotate-6 scale-110" : "rotate-0"
+                } ${savedData ? "opacity-35 blur-[1px]" : "opacity-100"}`}
               >
-                {/* Flapper Pivot Pin Dot */}
-                <div className="absolute -top-[23px] -left-[4px] w-2 h-2 rounded-full bg-white shadow-sm" />
+                {/* Pointer Pivot Gem */}
+                <div className="w-4 h-4 rounded-full bg-gradient-to-br from-amber-200 via-rose-500 to-amber-600 border border-white shadow-xs" />
+                {/* Golden Arrow Down */}
+                <div className="w-0 h-0 -mt-0.5 border-l-[9px] border-l-transparent border-r-[9px] border-r-transparent border-t-[18px] border-t-amber-400" />
               </div>
 
-              {/* Outer Golden Bezel Frame with Metallic Rivets (Clickable to spin before completion) */}
+              {/* Outer Golden Bezel Frame with Metallic Pearls */}
               <div
                 onClick={!savedData && !isSpinning ? handleSpin : undefined}
                 role={!savedData && !isSpinning ? "button" : undefined}
                 aria-label="Click to spin the wheel"
                 title={!savedData && !isSpinning ? "Click the wheel to spin!" : undefined}
-                className={`relative p-2.5 rounded-full bg-gradient-to-b from-[#fcd34d] via-[#f59e0b] to-[#b45309] shadow-[0_12px_35px_rgba(180,83,9,0.35),inset_0_2px_4px_rgba(255,255,255,0.8),inset_0_-3px_5px_rgba(120,53,15,0.4)] transition-all duration-700 ${savedData
-                    ? "filter blur-[6px] sm:blur-[7px] opacity-65 scale-[0.97] pointer-events-none"
+                className={`relative p-2.5 sm:p-3 rounded-full bg-gradient-to-b from-[#fef08a] via-[#f59e0b] to-[#92400e] shadow-[0_16px_40px_rgba(112,65,199,0.35),0_6px_16px_rgba(245,158,11,0.3),inset_0_2px_4px_rgba(255,255,255,0.9),inset_0_-3px_5px_rgba(120,53,15,0.5)] transition-all duration-700 ${
+                  savedData
+                    ? "filter blur-[6px] opacity-60 scale-[0.96] pointer-events-none"
                     : isSpinning
-                      ? "opacity-100 scale-100 cursor-default"
-                      : "opacity-100 scale-100 cursor-pointer hover:scale-[1.03] active:scale-95 group"
-                  }`}
+                    ? "opacity-100 scale-100 cursor-default"
+                    : "opacity-100 scale-100 cursor-pointer hover:scale-[1.02] active:scale-95 group"
+                }`}
               >
-                {/* Rotating 3D Wheel Container */}
+                {/* Rotating Wheel Container */}
                 <div
-                  className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full overflow-hidden shadow-inner"
+                  className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full overflow-hidden shadow-[inset_0_0_20px_rgba(0,0,0,0.35)]"
                   style={{
                     transform: `rotate(${rotation}deg)`,
                     transition: isSpinning ? "transform 4.4s cubic-bezier(0.12, 0.92, 0.22, 1)" : "none",
                   }}
                 >
-                  {/* SVG Wheel with 5 Realistic Segments */}
-                  <svg className="w-full h-full rounded-full" viewBox="0 0 300 300">
+                  {/* SVG Wheel with 5 Enchanted Jewel Slices */}
+                  <svg className="w-full h-full rounded-full" viewBox="0 0 320 320">
                     <defs>
-                      <radialGradient id="hubSpecular" cx="35%" cy="35%" r="65%">
+                      {/* Gradient for Each Slice */}
+                      {OFFERS.map((offer, i) => (
+                        <radialGradient key={offer.id} id={`sliceGrad_${i}`} cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor={offer.gradientStart} />
+                          <stop offset="100%" stopColor={offer.gradientEnd} />
+                        </radialGradient>
+                      ))}
+
+                      {/* Golden Bezel Metallic Rim */}
+                      <linearGradient id="goldBezel" x1="0" y1="0" x2="320" y2="320" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#fef08a" />
+                        <stop offset="0.3" stopColor="#f59e0b" />
+                        <stop offset="0.7" stopColor="#d97706" />
+                        <stop offset="1" stopColor="#78350f" />
+                      </linearGradient>
+
+                      {/* Golden Rivet / Pearl Gradient */}
+                      <radialGradient id="pearlGrad" cx="35%" cy="35%" r="65%">
                         <stop offset="0%" stopColor="#ffffff" />
-                        <stop offset="45%" stopColor="#fcd34d" />
+                        <stop offset="40%" stopColor="#fef08a" />
                         <stop offset="100%" stopColor="#b45309" />
+                      </radialGradient>
+
+                      {/* Center Amethyst Jewel Hub */}
+                      <radialGradient id="jewelHubGrad" cx="35%" cy="30%" r="70%">
+                        <stop offset="0%" stopColor="#e9d5ff" />
+                        <stop offset="35%" stopColor="#9333ea" />
+                        <stop offset="85%" stopColor="#3b0764" />
+                        <stop offset="100%" stopColor="#1e0538" />
                       </radialGradient>
                     </defs>
 
+                    {/* Slices */}
                     {OFFERS.map((offer, i) => {
-                      // 5 equal slices (72 degrees each)
                       const startAngle = (i * 72 * Math.PI) / 180;
                       const endAngle = ((i + 1) * 72 * Math.PI) / 180;
-                      const midAngle = ((i + 0.5) * 72 * Math.PI) / 180;
+                      const midAngle = (i * 72 + 36);
 
-                      const r = 150;
-                      const cx = 150;
-                      const cy = 150;
+                      const cx = 160;
+                      const cy = 160;
+                      const r = 160;
 
                       const x1 = cx + r * Math.cos(startAngle);
                       const y1 = cy + r * Math.sin(startAngle);
                       const x2 = cx + r * Math.cos(endAngle);
                       const y2 = cy + r * Math.sin(endAngle);
 
-                      const textR = 96;
-                      const tx = cx + textR * Math.cos(midAngle);
-                      const ty = cy + textR * Math.sin(midAngle);
-                      const textRot = (i + 0.5) * 72 + 90;
-
                       return (
                         <g key={offer.id}>
-                          {/* Colored Slice Path */}
+                          {/* Rich Jewel Slice Path */}
                           <path
                             d={`M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z`}
-                            fill={offer.color}
+                            fill={`url(#sliceGrad_${i})`}
                             stroke="#ffffff"
-                            strokeWidth="2.5"
+                            strokeWidth="2"
+                            strokeOpacity="0.8"
                           />
-                          {/* Metallic Gold Peg Rivet at slice boundary */}
-                          <circle cx={x2} cy={y2} r="3.5" fill="#fcd34d" stroke="#78350f" strokeWidth="1" />
 
-                          {/* Offer Text (Crisp White with drop shadow) */}
-                          <text
-                            x={tx}
-                            y={ty}
-                            fill="#ffffff"
-                            fontSize="13"
-                            fontWeight="800"
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                            transform={`rotate(${textRot}, ${tx}, ${ty})`}
-                            style={{ filter: "drop-shadow(0px 1px 2px rgba(0,0,0,0.75))" }}
-                          >
-                            {offer.label}
-                          </text>
+                          {/* Outer Delicate Spoke Glow */}
+                          <line
+                            x1={cx}
+                            y1={cy}
+                            x2={x2}
+                            y2={y2}
+                            stroke="#ffffff"
+                            strokeWidth="1.5"
+                            strokeOpacity="0.7"
+                          />
+
+                          {/* Text Group Oriented Along The Spoke Ray */}
+                          <g transform={`rotate(${midAngle}, ${cx}, ${cy})`}>
+                            {/* Crown / Fairy Icon at outer perimeter */}
+                            <text
+                              x={cx + (offer.id === 0 ? 122 : 118)}
+                              y={cy}
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              fontSize={offer.id === 0 ? "16" : "14"}
+                              className="select-none pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
+                            >
+                              {offer.icon}
+                            </text>
+
+                            {/* Main Big Offer Text */}
+                            <text
+                              x={cx + (offer.id === 0 ? 74 : 80)}
+                              y={cy - 4}
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              fill="#ffffff"
+                              fontSize={offer.id === 0 ? "14.5" : "15.5"}
+                              fontWeight="900"
+                              letterSpacing="0.4"
+                              className="select-none pointer-events-none font-sans"
+                              style={{ filter: "drop-shadow(0px 1.5px 3px rgba(0,0,0,0.65))" }}
+                            >
+                              {offer.primaryValue}
+                            </text>
+
+                            {/* Secondary Label (e.g. PREMIUM WISH, OFF) */}
+                            <text
+                              x={cx + (offer.id === 0 ? 74 : 80)}
+                              y={cy + 10}
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              fill="#fef08a"
+                              fontSize={offer.id === 0 ? "8.6" : "10"}
+                              fontWeight="800"
+                              letterSpacing={offer.id === 0 ? "0.4" : "0.8"}
+                              className="select-none pointer-events-none font-sans"
+                              style={{ filter: "drop-shadow(0px 1px 2px rgba(0,0,0,0.6))" }}
+                            >
+                              {offer.secondaryValue}
+                            </text>
+                          </g>
                         </g>
                       );
                     })}
 
-                    {/* Wheel Center 3D Gold Hub Cap */}
-                    <circle cx="150" cy="150" r="32" fill="url(#hubSpecular)" stroke="#ffffff" strokeWidth="2.5" />
-                    <circle cx="150" cy="150" r="16" fill="#1e1044" />
+                    {/* Outer Golden Studs / Pearls along the border */}
+                    {Array.from({ length: 20 }).map((_, idx) => {
+                      const a = (idx * (360 / 20) * Math.PI) / 180;
+                      const px = 160 + 153 * Math.cos(a);
+                      const py = 160 + 153 * Math.sin(a);
+                      return (
+                        <circle
+                          key={idx}
+                          cx={px}
+                          cy={py}
+                          r="2.6"
+                          fill="url(#pearlGrad)"
+                          stroke="#78350f"
+                          strokeWidth="0.5"
+                        />
+                      );
+                    })}
+
+                    {/* Center 3D Faceted Amethyst & Gold Hub Cap */}
+                    <circle cx="160" cy="160" r="32" fill="url(#goldBezel)" stroke="#ffffff" strokeWidth="2" />
+                    <circle cx="160" cy="160" r="23" fill="url(#jewelHubGrad)" />
+                    {/* Golden Star in Hub */}
                     <text
-                      x="150"
-                      y="153.5"
-                      fill="#ffd700"
-                      fontSize="9.5"
-                      fontWeight="900"
-                      letterSpacing="0.6"
+                      x="160"
+                      y="164.5"
+                      fill="#fde047"
+                      fontSize="14"
+                      fontWeight="bold"
                       textAnchor="middle"
-                      className="select-none pointer-events-none"
+                      className="select-none pointer-events-none drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]"
                     >
-                      SPIN
+                      ✦
                     </text>
                   </svg>
                 </div>
               </div>
 
-              {/* FLOATING PRIZE CARD OVERLAY DIRECTLY ON TOP OF BLURRED WHEEL */}
+              {/* CELEBRATION PRIZE CARD OVERLAY DIRECTLY ON TOP OF BLURRED WHEEL */}
               {savedData && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center p-2.5 sm:p-3 animate-in zoom-in-95 fade-in duration-500">
-                  <div className="w-full max-w-[290px] sm:max-w-[315px] rounded-3xl bg-white/95 backdrop-blur-2xl border border-amber-300/80 p-5 sm:p-6 text-center shadow-[0_20px_50px_rgba(30,10,60,0.32),inset_0_2px_4px_rgba(255,255,255,0.95)]">
-                    <span className="inline-block text-[11px] font-extrabold uppercase tracking-wider text-purple-700 bg-purple-100/80 border border-purple-200/60 px-3 py-1 rounded-full mb-2 shadow-xs">
-                      🎉 Congratulations! Your Prize:
+                  <div className="w-full max-w-[295px] sm:max-w-[320px] rounded-3xl bg-white/95 backdrop-blur-2xl border border-amber-300/80 p-5 sm:p-6 text-center shadow-[0_20px_50px_rgba(112,65,199,0.32),inset_0_2px_4px_rgba(255,255,255,0.95)]">
+                    <span className="inline-block text-[11px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100/90 border border-amber-300/80 px-3.5 py-1 rounded-full mb-2 shadow-xs">
+                      {savedData.offer.id === 0 ? "👑 VIP GRAND PRIZE UNLOCKED!" : "🎉 SPECIAL PRIZE UNLOCKED!"}
                     </span>
-                    <div className="text-2xl sm:text-3xl font-black text-[#1e1044] tracking-tight drop-shadow-xs">
+                    <div className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#2c1b69] via-[#7e22ce] to-[#db2777] bg-clip-text text-transparent tracking-tight">
                       {savedData.offer.label}
                     </div>
-                    <div className="text-xs text-purple-600 font-semibold mt-0.5 mb-4">
-                      {savedData.offer.sublabel}
+                    <div className="text-xs text-[#554585] font-semibold mt-0.5 mb-4">
+                      {savedData.offer.id === 0 ? "✨ Any Premium Wish Template 100% Free on Launch Day" : savedData.offer.sublabel}
                     </div>
 
                     {/* Google Signup API Claim Flow */}
@@ -620,7 +738,7 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
                       </div>
                     ) : (
                       <div className="space-y-2.5">
-                        <p className="text-[11px] text-neutral-600 leading-snug">
+                        <p className="text-[11px] text-[#554585] leading-snug">
                           Sign in with Google to save this prize to your account for launch day:
                         </p>
                         <button
@@ -672,20 +790,20 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
                 <button
                   onClick={handleSpin}
                   disabled={isSpinning}
-                  className="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-[#6b28d9] via-[#7c3aed] to-[#8b5cf6] hover:from-[#5b21b6] hover:to-[#7c3aed] text-white font-extrabold text-sm sm:text-base shadow-[0_6px_20px_rgba(109,40,217,0.35),inset_0_1px_1.5px_rgba(255,255,255,0.4)] hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 cursor-pointer"
+                  className="w-full py-3 sm:py-3.5 px-6 rounded-full bg-gradient-to-r from-[#6b28d9] via-[#8b5cf6] via-[#d946ef] to-[#db2777] hover:from-[#5b21b6] hover:to-[#c026d3] text-white font-extrabold text-sm sm:text-[15px] shadow-[0_8px_25px_rgba(109,40,217,0.4),inset_0_1.5px_2px_rgba(255,255,255,0.5)] hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 cursor-pointer flex items-center justify-center gap-2"
                 >
-                  {isSpinning ? "SPINNING THE WHEEL... 🎯" : "SPIN NOW TO WIN 🎁"}
+                  <span>{isSpinning ? "🪄 Revealing Your Magic..." : "✨ Spin The Magic Wheel ✨"}</span>
                 </button>
-                <p className="text-[11px] text-neutral-500 font-medium">
-                  Click the wheel or button to spin • One spin per dreamer
+                <p className="text-[11px] text-[#715f94] font-medium">
+                  Click the wheel or button to spin • 100% Guaranteed Launch Gift
                 </p>
               </div>
             ) : (
-              <div className="pt-1 flex items-center justify-between text-[11px] text-neutral-500 font-medium px-2">
+              <div className="pt-1 flex items-center justify-between text-[11px] text-[#715f94] font-medium px-2">
                 <span>Reserved for launch day</span>
                 <button
                   onClick={() => setModalOpen(false)}
-                  className="text-purple-700 hover:text-purple-900 font-semibold underline cursor-pointer"
+                  className="text-purple-700 hover:text-purple-900 font-bold underline cursor-pointer"
                 >
                   Close Window
                 </button>

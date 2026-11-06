@@ -5,6 +5,7 @@ export const siteConfig = {
   description:
     "WishForMoment helps you create beautiful, personalized digital wishes, invitations, and greetings. Customize and share magical moments with the people you love.",
   url: process.env.NEXT_PUBLIC_APP_URL || "https://wishformoment.com",
+  launchDate: process.env.NEXT_PUBLIC_LAUNCH_DATE || "2026-11-08T18:00:00+05:30",
   keywords: [
     "WishForMoment",
     "digital wishes",
