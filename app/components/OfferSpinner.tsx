@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useSyncExternalStore } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { trackEvent } from "@/lib/gtag";
 
-const emptySubscribe = () => () => {};
+const emptySubscribe = () => () => { };
 
 let cachedRaw: string | null = null;
 let cachedParsed: ClaimedData | null = null;
@@ -355,55 +355,55 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
 
         const data = await res.json();
 
-        // Support both direct backend response { accessToken, user, ... } and envelope { success, data: { ... } }
-        const userObj = data?.user || data?.data?.user;
-        const accessToken = data?.accessToken || data?.data?.accessToken;
-        const isSuccess = res.ok && (Boolean(accessToken) || Boolean(userObj) || data?.success === true);
+          // Support both direct backend response { accessToken, user, ... } and envelope { success, data: { ... } }
+          const userObj = data?.user || data?.data?.user;
+          const accessToken = data?.accessToken || data?.data?.accessToken;
+          const isSuccess = res.ok && (Boolean(accessToken) || Boolean(userObj) || data?.success === true);
 
-        if (isSuccess) {
-          const userEmail = userObj?.email || "Google Account Connected";
-          const returnedReward = userObj?.reward || data?.rewardCode || data?.data?.rewardCode || rewardKey;
+          if (isSuccess) {
+            const userEmail = userObj?.email || "Google Account Connected";
+            const returnedReward = userObj?.reward || data?.rewardCode || data?.data?.rewardCode || rewardKey;
 
-          const updated: ClaimedData = {
-            ...savedData,
-            email: userEmail,
-            claimed: true,
-            rewardCode: returnedReward,
-          };
-          setSavedData(updated);
-          try {
-            localStorage.setItem("wish_assigned_user_offer", JSON.stringify(updated));
-            if (accessToken) {
-              localStorage.setItem("accessToken", accessToken);
+            const updated: ClaimedData = {
+              ...savedData,
+              email: userEmail,
+              claimed: true,
+              rewardCode: returnedReward,
+            };
+            setSavedData(updated);
+            try {
+              localStorage.setItem("wish_assigned_user_offer", JSON.stringify(updated));
+              if (accessToken) {
+                localStorage.setItem("accessToken", accessToken);
+              }
+              const refreshToken = data?.refreshToken || data?.data?.refreshToken;
+              if (refreshToken) {
+                localStorage.setItem("refreshToken", refreshToken);
+              }
+            } catch {
+              // Ignore
             }
-            const refreshToken = data?.refreshToken || data?.data?.refreshToken;
-            if (refreshToken) {
-              localStorage.setItem("refreshToken", refreshToken);
-            }
-          } catch {
-            // Ignore
+            setApiSuccessMsg("Reward successfully applied to your account! ✨");
+            trackEvent({
+              action: "reward_claimed_google",
+              category: "conversion",
+              label: savedData.offer.label,
+            });
+          } else {
+            const errorMsg = data?.message || data?.error?.message || data?.error || "Failed to link reward with your account.";
+            setGoogleError(errorMsg);
           }
-          setApiSuccessMsg("Reward successfully applied to your account! ✨");
-          trackEvent({
-            action: "reward_claimed_google",
-            category: "conversion",
-            label: savedData.offer.label,
-          });
-        } else {
-          const errorMsg = data?.message || data?.error?.message || data?.error || "Failed to link reward with your account.";
-          setGoogleError(errorMsg);
+        } catch (err) {
+          console.error("Failed to connect with WishForMoment backend:", err);
+          setGoogleError("Connection error with server. Please try again.");
+        } finally {
+          setIsSubmittingApi(false);
         }
-      } catch (err) {
-        console.error("Failed to connect with WishForMoment backend:", err);
-        setGoogleError("Connection error with server. Please try again.");
-      } finally {
-        setIsSubmittingApi(false);
-      }
-    },
-    onError: (error) => {
-      console.error("Google sign in error:", error);
-      setGoogleError(error.error_description || "Google sign-in was cancelled or failed.");
-    },
+      },
+      onError: (error) => {
+        console.error("Google sign in error:", error);
+        setGoogleError(error.error_description || "Google sign-in was cancelled or failed.");
+      },
   });
 
   return (
@@ -432,8 +432,7 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
         <button
           onClick={() => setModalOpen(true)}
           suppressHydrationWarning
-          className={`relative flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-5 py-1.5 sm:py-2.5 md:py-3 rounded-full backdrop-blur-xl border transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group overflow-hidden ${
-            isMounted && savedData?.claimed
+          className={`relative flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-5 py-1.5 sm:py-2.5 md:py-3 rounded-full backdrop-blur-xl border transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group overflow-hidden ${isMounted && savedData?.claimed
               ? "bg-emerald-50/95 border-emerald-300/80 shadow-[0_8px_25px_rgba(16,185,129,0.2)]"
               : isMounted && savedData
                 ? "bg-amber-50/95 border-amber-300/80 animate-pulse shadow-[0_8px_28px_rgba(245,158,11,0.25)]"
@@ -540,9 +539,8 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
             <div className="relative my-4 sm:my-5 flex items-center justify-center min-h-[285px] sm:min-h-[310px]">
               {/* Jeweled Golden Pointer / Flapper Needle */}
               <div
-                className={`absolute -top-3 z-30 flex flex-col items-center transition-all duration-300 drop-shadow-[0_4px_8px_rgba(180,83,9,0.55)] ${
-                  isFlapperWiggling ? "rotate-6 scale-110" : "rotate-0"
-                } ${savedData ? "opacity-35 blur-[1px]" : "opacity-100"}`}
+                className={`absolute -top-3 z-30 flex flex-col items-center transition-all duration-300 drop-shadow-[0_4px_8px_rgba(180,83,9,0.55)] ${isFlapperWiggling ? "rotate-6 scale-110" : "rotate-0"
+                  } ${savedData ? "opacity-35 blur-[1px]" : "opacity-100"}`}
               >
                 {/* Pointer Pivot Gem */}
                 <div className="w-4 h-4 rounded-full bg-gradient-to-br from-amber-200 via-rose-500 to-amber-600 border border-white shadow-xs" />
@@ -556,13 +554,12 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
                 role={!savedData && !isSpinning ? "button" : undefined}
                 aria-label="Click to spin the wheel"
                 title={!savedData && !isSpinning ? "Click the wheel to spin!" : undefined}
-                className={`relative p-2.5 sm:p-3 rounded-full bg-gradient-to-b from-[#fef08a] via-[#f59e0b] to-[#92400e] shadow-[0_16px_40px_rgba(112,65,199,0.35),0_6px_16px_rgba(245,158,11,0.3),inset_0_2px_4px_rgba(255,255,255,0.9),inset_0_-3px_5px_rgba(120,53,15,0.5)] transition-all duration-700 ${
-                  savedData
+                className={`relative p-2.5 sm:p-3 rounded-full bg-gradient-to-b from-[#fef08a] via-[#f59e0b] to-[#92400e] shadow-[0_16px_40px_rgba(112,65,199,0.35),0_6px_16px_rgba(245,158,11,0.3),inset_0_2px_4px_rgba(255,255,255,0.9),inset_0_-3px_5px_rgba(120,53,15,0.5)] transition-all duration-700 ${savedData
                     ? "filter blur-[6px] opacity-60 scale-[0.96] pointer-events-none"
                     : isSpinning
-                    ? "opacity-100 scale-100 cursor-default"
-                    : "opacity-100 scale-100 cursor-pointer hover:scale-[1.02] active:scale-95 group"
-                }`}
+                      ? "opacity-100 scale-100 cursor-default"
+                      : "opacity-100 scale-100 cursor-pointer hover:scale-[1.02] active:scale-95 group"
+                  }`}
               >
                 {/* Rotating Wheel Container */}
                 <div
