@@ -722,7 +722,7 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
                     <span className="inline-block text-[11px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100/90 border border-amber-300/80 px-3.5 py-1 rounded-full mb-2 shadow-xs">
                       {savedData.offer.id === 0 ? "👑 VIP GRAND PRIZE UNLOCKED!" : "🎉 SPECIAL PRIZE UNLOCKED!"}
                     </span>
-                    <div className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#2c1b69] via-[#7e22ce] to-[#db2777] bg-clip-text text-transparent tracking-tight">
+                    <div className="text-2xl sm:text-3xl font-black gradient-magical-text tracking-tight">
                       {savedData.offer.label}
                     </div>
                     <div className="text-xs text-[#554585] font-semibold mt-0.5 mb-4">

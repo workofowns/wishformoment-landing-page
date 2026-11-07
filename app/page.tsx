@@ -159,10 +159,10 @@ export default function Home() {
               Something magical is
             </span>
             <span
-              className="block text-2xl sm:text-3xl md:text-4xl lg:text-[2.5vw]/[1.25] font-semibold bg-gradient-to-r from-[#2c1b69] via-[#7e22ce] via-[#db2777] to-[#9333ea] bg-clip-text text-transparent mt-0.5 sm:mt-1 drop-shadow-[0_1px_5px_rgba(255,255,255,0.4)] animate-reveal-scale"
+              className="block text-2xl sm:text-3xl md:text-4xl lg:text-[2.5vw]/[1.25] font-semibold mt-0.5 sm:mt-1 animate-reveal-scale"
               style={{ animationDelay: "450ms" }}
             >
-              <span className="animate-gradient-x animate-text-glow inline-block">
+              <span className="gradient-magical-text">
                 waiting to be opened...
               </span>
             </span>

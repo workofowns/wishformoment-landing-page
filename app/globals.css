@@ -190,69 +190,61 @@ body {
   animation: live-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Staggered Cinematic Page Entrance Animations */
-@keyframes reveal-down-blur {
+/* Staggered Cinematic Page Entrance Animations (iOS WebKit & Android Hardware Accelerated) */
+@keyframes reveal-down-fade {
   0% {
     opacity: 0;
-    transform: translateY(-24px);
-    filter: blur(8px);
+    transform: translateY(-20px);
   }
   100% {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0px);
   }
 }
 
-@keyframes reveal-scale-glow {
+@keyframes reveal-scale-fade {
   0% {
     opacity: 0;
-    transform: scale(0.92) translateY(12px);
-    filter: blur(10px);
+    transform: scale(0.92) translateY(10px);
   }
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
-    filter: blur(0px);
   }
 }
 
-@keyframes reveal-up-blur {
+@keyframes reveal-up-fade {
   0% {
     opacity: 0;
-    transform: translateY(22px);
-    filter: blur(6px);
+    transform: translateY(18px);
   }
   100% {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0px);
   }
 }
 
 @keyframes card-pop-in {
   0% {
     opacity: 0;
-    transform: translateY(28px) scale(0.72) rotate(-3deg);
-    filter: blur(5px);
+    transform: translateY(24px) scale(0.75);
   }
   70% {
-    transform: translateY(-3px) scale(1.05) rotate(1deg);
+    transform: translateY(-2px) scale(1.04);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1) rotate(0deg);
-    filter: blur(0px);
+    transform: translateY(0) scale(1);
   }
 }
 
 @keyframes cta-spring-in {
   0% {
     opacity: 0;
-    transform: translateY(35px) scale(0.85);
+    transform: translateY(30px) scale(0.85);
   }
   65% {
-    transform: translateY(-5px) scale(1.04);
+    transform: translateY(-4px) scale(1.03);
   }
   100% {
     opacity: 1;
@@ -261,23 +253,42 @@ body {
 }
 
 .animate-reveal-down {
-  animation: reveal-down-blur 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: reveal-down-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
 }
 
 .animate-reveal-scale {
-  animation: reveal-scale-glow 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: reveal-scale-fade 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
 }
 
 .animate-reveal-up {
-  animation: reveal-up-blur 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: reveal-up-fade 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
 }
 
 .animate-card-pop {
-  animation: card-pop-in 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: card-pop-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
 }
 
 .animate-cta-spring {
-  animation: cta-spring-in 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: cta-spring-in 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
+}
+
+/* iOS Safari Safe Shimmering Gradient Text */
+.gradient-magical-text {
+  background: linear-gradient(90deg, #2c1b69 0%, #7e22ce 30%, #db2777 65%, #9333ea 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  display: inline-block;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  animation: gradient-x 6s ease-in-out infinite;
 }
 
 
