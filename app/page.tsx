@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, Suspense } from "react";
 import Image from "next/image";
 import OfferSpinner from "./components/OfferSpinner";
 import CountdownTimer from "./components/CountdownTimer";
@@ -178,7 +178,16 @@ export default function Home() {
           </p>
 
           {/* Water-Type Liquid Glassmorphic Countdown Timer (Targets Locked Future Launch Date) */}
-          <CountdownTimer />
+          <Suspense
+            fallback={
+              <div
+                className="pt-1 sm:pt-1.5 md:pt-3 opacity-0 pointer-events-none select-none h-[44px] sm:h-[54px] md:h-[70px]"
+                aria-hidden="true"
+              />
+            }
+          >
+            <CountdownTimer />
+          </Suspense>
 
           {/* VIP Early Access Email Capture Form */}
           <div

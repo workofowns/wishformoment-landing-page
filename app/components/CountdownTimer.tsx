@@ -17,6 +17,13 @@ interface CountdownTimerProps {
 
 const emptySubscribe = () => () => { };
 
+const DEFAULT_TIME_LEFT: TimeLeft = {
+  days: "00",
+  hours: "00",
+  minutes: "00",
+  seconds: "00",
+};
+
 export default function CountdownTimer({ targetDate: customTarget, onLaunch }: CountdownTimerProps) {
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
@@ -26,23 +33,7 @@ export default function CountdownTimer({ targetDate: customTarget, onLaunch }: C
   }, [customTarget]);
 
   const [isLive, setIsLive] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>(() => {
-    const now = Date.now();
-    const diff = targetTime - now;
-    if (diff <= 0) {
-      return { days: "00", hours: "00", minutes: "00", seconds: "00" };
-    }
-    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const m = Math.floor((diff % (1000 * 60)) / (1000 * 60));
-    const s = Math.floor((diff % (1000 * 60)) / 1000);
-    return {
-      days: String(d).padStart(2, "0"),
-      hours: String(h).padStart(2, "0"),
-      minutes: String(m).padStart(2, "0"),
-      seconds: String(s).padStart(2, "0"),
-    };
-  });
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>(DEFAULT_TIME_LEFT);
 
   useEffect(() => {
     if (!isMounted) return;
