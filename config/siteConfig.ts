@@ -26,7 +26,7 @@ export const siteConfig = {
     "surprise celebration card",
     "VIP early access launch",
   ],
-  ogImage: "/og-image.png",
+  ogImage: "/og-image.webp",
   twitterHandle: "@wishformoment",
   locale: "en_US",
   gaId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-W889RRGH16",

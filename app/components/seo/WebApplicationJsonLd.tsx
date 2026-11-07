@@ -14,7 +14,7 @@ export function WebApplicationJsonLd() {
     operatingSystem: "All",
     browserRequirements: "Requires JavaScript. Requires HTML5.",
     description: siteConfig.description,
-    image: `${siteConfig.url}/og-image.png`,
+    image: `${siteConfig.url}/og-image.webp`,
     offers: {
       "@type": "Offer",
       price: "0",

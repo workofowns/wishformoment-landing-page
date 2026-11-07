@@ -34,9 +34,9 @@
   ],
   "screenshots": [
     {
-      "src": "/og-image.png",
+      "src": "/og-image.webp",
       "sizes": "1200x630",
-      "type": "image/png",
+      "type": "image/webp",
       "form_factor": "wide",
       "label": "WishForMoment - Create Personalized Digital Wishes and Invitations"
     }
