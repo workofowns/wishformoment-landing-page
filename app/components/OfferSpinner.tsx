@@ -355,16 +355,31 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
 
         const data = await res.json();
 
-        if (res.ok && data?.success) {
+        // Support both direct backend response { accessToken, user, ... } and envelope { success, data: { ... } }
+        const userObj = data?.user || data?.data?.user;
+        const accessToken = data?.accessToken || data?.data?.accessToken;
+        const isSuccess = res.ok && (Boolean(accessToken) || Boolean(userObj) || data?.success === true);
+
+        if (isSuccess) {
+          const userEmail = userObj?.email || "Google Account Connected";
+          const returnedReward = userObj?.reward || data?.rewardCode || data?.data?.rewardCode || rewardKey;
+
           const updated: ClaimedData = {
             ...savedData,
-            email: data?.data?.user?.email || "Google Account Connected",
+            email: userEmail,
             claimed: true,
-            rewardCode: data?.data?.rewardCode || rewardKey,
+            rewardCode: returnedReward,
           };
           setSavedData(updated);
           try {
             localStorage.setItem("wish_assigned_user_offer", JSON.stringify(updated));
+            if (accessToken) {
+              localStorage.setItem("accessToken", accessToken);
+            }
+            const refreshToken = data?.refreshToken || data?.data?.refreshToken;
+            if (refreshToken) {
+              localStorage.setItem("refreshToken", refreshToken);
+            }
           } catch {
             // Ignore
           }
@@ -375,7 +390,8 @@ export default function OfferSpinner({ isOpen: controlledIsOpen, onOpenChange }:
             label: savedData.offer.label,
           });
         } else {
-          setGoogleError(data?.message || "Failed to link reward with your account.");
+          const errorMsg = data?.message || data?.error?.message || data?.error || "Failed to link reward with your account.";
+          setGoogleError(errorMsg);
         }
       } catch (err) {
         console.error("Failed to connect with WishForMoment backend:", err);
