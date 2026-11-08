@@ -38,6 +38,8 @@ export default function CountdownTimer({ targetDate: customTarget, onLaunch }: C
   useEffect(() => {
     if (!isMounted) return;
 
+    let reloadTimeout: ReturnType<typeof setTimeout> | null = null;
+
     const calculateTime = () => {
       const now = Date.now();
       const diff = targetTime - now;
@@ -51,6 +53,27 @@ export default function CountdownTimer({ targetDate: customTarget, onLaunch }: C
           seconds: "00",
         });
         onLaunch?.();
+
+        // Reload the page only on the very first time the timer reaches 0 / is closed
+        const storageKey = `wfm_countdown_reloaded_${targetTime}`;
+        try {
+          const alreadyReloaded =
+            localStorage.getItem(storageKey) === "true" ||
+            sessionStorage.getItem(storageKey) === "true";
+
+          if (!alreadyReloaded) {
+            localStorage.setItem(storageKey, "true");
+            sessionStorage.setItem(storageKey, "true");
+            reloadTimeout = setTimeout(() => {
+              if (typeof window !== "undefined") {
+                window.location.reload();
+              }
+            }, 300);
+          }
+        } catch {
+          // Safeguard against storage exceptions to prevent infinite reload loops
+        }
+
         return false;
       }
 
@@ -77,7 +100,12 @@ export default function CountdownTimer({ targetDate: customTarget, onLaunch }: C
       }
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      if (reloadTimeout) {
+        clearTimeout(reloadTimeout);
+      }
+    };
   }, [isMounted, targetTime, onLaunch]);
 
   // Initial SSR / Unmounted state: completely invisible (opacity 0) without any placeholder cards or '--' flash
