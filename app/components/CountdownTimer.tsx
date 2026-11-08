@@ -38,40 +38,25 @@ export default function CountdownTimer({ targetDate: customTarget, onLaunch }: C
   useEffect(() => {
     if (!isMounted) return;
 
-    let reloadTimeout: ReturnType<typeof setTimeout> | null = null;
-
     const calculateTime = () => {
       const now = Date.now();
       const diff = targetTime - now;
 
       if (diff <= 0) {
         setIsLive(true);
-        setTimeLeft({
-          days: "00",
-          hours: "00",
-          minutes: "00",
-          seconds: "00",
-        });
+        setTimeLeft(DEFAULT_TIME_LEFT);
         onLaunch?.();
 
-        // Reload the page only on the very first time the timer reaches 0 / is closed
-        const storageKey = `wfm_countdown_reloaded_${targetTime}`;
+        // When time is over (00), automatically reload the page once
+        const storageKey = `wfm_reloaded_${targetTime}`;
         try {
-          const alreadyReloaded =
-            localStorage.getItem(storageKey) === "true" ||
-            sessionStorage.getItem(storageKey) === "true";
-
-          if (!alreadyReloaded) {
-            localStorage.setItem(storageKey, "true");
+          if (!sessionStorage.getItem(storageKey) && !localStorage.getItem(storageKey)) {
             sessionStorage.setItem(storageKey, "true");
-            reloadTimeout = setTimeout(() => {
-              if (typeof window !== "undefined") {
-                window.location.reload();
-              }
-            }, 300);
+            localStorage.setItem(storageKey, "true");
+            window.location.reload();
           }
         } catch {
-          // Safeguard against storage exceptions to prevent infinite reload loops
+          window.location.reload();
         }
 
         return false;
@@ -79,7 +64,7 @@ export default function CountdownTimer({ targetDate: customTarget, onLaunch }: C
 
       const d = Math.floor(diff / (1000 * 60 * 60 * 24));
       const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const m = Math.floor((diff % (1000 * 60)) / (1000 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((diff % (1000 * 60)) / 1000);
 
       setTimeLeft({
@@ -100,12 +85,7 @@ export default function CountdownTimer({ targetDate: customTarget, onLaunch }: C
       }
     }, 1000);
 
-    return () => {
-      clearInterval(timer);
-      if (reloadTimeout) {
-        clearTimeout(reloadTimeout);
-      }
-    };
+    return () => clearInterval(timer);
   }, [isMounted, targetTime, onLaunch]);
 
   // Initial SSR / Unmounted state: completely invisible (opacity 0) without any placeholder cards or '--' flash
