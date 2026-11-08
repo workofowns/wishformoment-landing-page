@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, Suspense } from "react";
+import { useRef, useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import OfferSpinner from "./components/OfferSpinner";
 import CountdownTimer from "./components/CountdownTimer";
@@ -11,6 +11,23 @@ export default function Home() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSpinnerOpen, setIsSpinnerOpen] = useState(false);
+
+  // Automatically open the reward spinner modal after user stays for 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const saved = localStorage.getItem("wish_assigned_user_offer");
+        const parsed = saved ? JSON.parse(saved) : null;
+        // Don't auto-popup if the user already claimed their reward
+        if (parsed?.claimed) return;
+      } catch {
+        // Continue
+      }
+      setIsSpinnerOpen(true);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const togglePlay = () => {
     if (videoRef.current) {
