@@ -47,14 +47,14 @@ export default function Home() {
 
   const handleVideoEnded = () => {
     setIsPlaying(false);
-    // Automatically open spinner modal when video completes if spin is pending
+    // Only auto-open if user has not spun yet OR has spun but not collected the offer yet
     try {
       const saved = localStorage.getItem("wish_assigned_user_offer");
-      if (!saved) {
-        setTimeout(() => {
-          setIsSpinnerOpen(true);
-        }, 350);
-      }
+      const parsed = saved ? JSON.parse(saved) : null;
+      if (parsed?.claimed) return;
+      setTimeout(() => {
+        setIsSpinnerOpen(true);
+      }, 350);
     } catch {
       setIsSpinnerOpen(true);
     }
